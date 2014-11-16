@@ -109,6 +109,7 @@ FINISH              LEA     FINISHED_STR, A1
                     MOVE.B  #9, D0
                     TRAP    #15
 
+;==================== String Literals =========================================
 CHECK_INSTR_STR     DC.B    'Checking for instruction: ', 0
 DETECT_INSTR_STR    DC.B    'Detected instruction: ', 0
 
@@ -120,7 +121,26 @@ INVALID_STR         DC.B    'Invalid instruction detected.', 0
 FINISHED_STR        DC.B    'Finished processing instructions.', 0
 NEWLINE_STR         DC.B    CR, LF, 0
 
+;=================== Effective Address Table Masks ============================
+; An effective address table mask describes which effective address types are
+; valid for a given op code and effection address position. For example, the
+; mask %11111111 allows all effective addresses, the mask %10000000 only allows
+; data registers as effective addresses, etc... The original purpose of these
+; masks is to determine if a passed mode and register value is valid.
+;
+; Bit 1 corresponds to Dn
+; Bit 2 corresponds to An
+; Bit 3 corresponds to (An)
+; Bit 4 corresponds to (An)+
+; Bit 5 corresponds to -(An)
+; Bit 6 corresponds to (xxx).W
+; Bit 7 corresponds to (xxx).L
+; Bit 8 corresponds to #<data>
+TBL_MASK_MOVE_SRC   DC.B    %11111111
+TBL_MASK_MOVE_DST   DC.B    %10111110
+
                     END		START
+
 
 
 
