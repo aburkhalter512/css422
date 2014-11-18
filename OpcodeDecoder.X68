@@ -44,6 +44,11 @@ EA_SUFFIX_INC       EQU    %00000010   ;(An)+
 EA_SUFFIX_DEC       EQU    %00000011   ;-(An)
 EA_SUFFIX_DATA      EQU    %00000111   ;#<data>
 
+;=================== Absolute Address/Data Register Codes =====================
+EA_W_REG            EQU     %00000000   ;(xxx).W
+EA_L_REG            EQU     %00000001   ;(xxx).L
+EA_DATA_REG         EQU     %00000100   ;#<data>
+
 ;=================== Effective Address Table Masks ============================
 ; An effective address table mask describes which effective address types are
 ; valid for a given op code and effection address position. For example, the
@@ -193,9 +198,11 @@ FINISH              LEA     FINISHED_STR, A1
 *   Return Values:
 *       returnSize: byte
 *           This value specifies how many bytes this subroutine has pushed to
-*           the stack (except for this byte). The expected values are 1-5
+*           the stack (except for this byte). The expected values are 1-4.
 *       ea: byte
-*           This is a bit packed byte, storing 3 distinct pieces of data.
+*           THIS IS ONLY RETURNED WHEN THERE IS NO DATA (IE EVERY OTHER MODE
+*           BESIDES 111). This is a bit packed byte, storing 3 distinct pieces 
+*           of data.
 *
 *           Bit 1 specifies if this is an error code or not. If bit 1 is 0,
 *           then the return value is not an error code, and vice versa when bit
@@ -206,11 +213,12 @@ FINISH              LEA     FINISHED_STR, A1
 *           etc...
 *           
 *           Bits 6-8 contains the suffix for the registers or the absolute
-*           address. If the suffix is 111 aka $#<data>, then Bits 2-5 are bogus
+*           address. If the suffix is 111 aka #<data>, then Bits 2-5 are bogus
 *           and should be ignored completely. 000 corresponds to no suffix.
 *           001 corresponds to (An). 010 corresponds to -(An). 011 corresponds
 *           to (An)+
 *       data: byte (0-4)
+*           THIS IS ONLY RETURNED WHEN THERE IS DATA (IE ONLY MODE 111).
 *           This is a variable size return value, and the size of the data
 *           returned can be determined by checking the returnSize - 1, for this
 *           specific subroutine. When data is returned, it is either in the form
@@ -263,6 +271,7 @@ GET_SOURCE_EA_0     LSR.B D0, #5             ;Isolate the mode bits in D0
                     
                     *Bits 0-2 in D0 is the mode at this point
                     *Bits 0-2 in D1 is the reg at this point
+                    *Bits 0-8 in D2 is the tableMask at this point
                     
 *================== Data Register Mode =======================================
 GET_SRC_EA_MODE_0   CMPI.B EA_MODE_DATA_REG, D0   ;Is the mode Data Registers?
@@ -297,10 +306,10 @@ GET_SRC_EA_MODE_1   CMPI.B EA_MODE_ADDR_REG, D0   ;Is the mode Address Registers
                     
 *================== Indirect Address Register Mode ============================
 GET_SRC_EA_MODE_2   CMPI.B EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address Registers?
-                    BNE GET_SRC_EA_MODE_2   ;If it isn't, skip to the next check
+                    BNE GET_SRC_EA_MODE_3   ;If it isn't, skip to the next check
                     
                     MOVE.B D2, D3           ;Copy the Table Mask
-                    ANDI.B TBL_MASK_IND_ADDR, D3   ;Lets mask out the An bit
+                    ANDI.B TBL_MASK_IND_ADDR, D3   ;Lets mask out the (An) bit
                     BTST.B TBL_MASK_IND_ADDR, D3     ;Is the An bit active?
                     BNE GET_SRC_EA_BAD_MODE ;If it isn't, we have a bad mode on our hands
                     
@@ -317,11 +326,126 @@ GET_SRC_EA_MODE_2   CMPI.B EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address 
                     MOVE.B #1, -(SP)            ;Load how many return values there are (just 1)
                     
                     BEQ GET_SRC_EA_RETURN       ;We can return our values now
-GET_SRC_EA_MODE_3   
-GET_SRC_EA_MODE_4   
-GET_SRC_EA_MODE_5   
-GET_SRC_EA_MODE_6   
-GET_SRC_EA_MODE_7   
+
+*================== Post-Increment Address Register Mode ======================              
+GET_SRC_EA_MODE_3   CMPI.B EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address Registers?
+                    BNE GET_SRC_EA_MODE_4   ;If it isn't, skip to the next check
+                    
+                    MOVE.B D2, D3           ;Copy the Table Mask
+                    ANDI.B TBL_MASK_INC_ADDR, D3   ;Lets mask out the (An)+ bit
+                    BTST.B TBL_MASK_INC_ADDR, D3     ;Is the (An)+ bit active?
+                    BNE GET_SRC_EA_BAD_MODE ;If it isn't, we have a bad mode on our hands
+                    
+                    *Error checking done
+                    
+                    *Suffix processing
+                    MOVE.B EA_SUFFIX_INC, D0    ;Move the suffix ()+ into D0
+                    LSL.B D0, #4                ;Move the suffix into the correct position
+                    OR.B D0, D1                 ;Add the suffix to the ea builder
+                    
+                    *Address Register Processing
+                    ORI.B #00001000, D1         ;The 4th bit specifies that its an address reg
+                    MOVE.B D1, -(SP)            ;Load the register to the return value
+                    MOVE.B #1, -(SP)            ;Load how many return values there are (just 1)
+                    
+                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+
+*================== Pre-Decrement Address Register Mode =======================
+GET_SRC_EA_MODE_4   CMPI.B EA_MODE_DEC_ADDR, D0   ;Is the mode Indirect Address Registers?
+                    BNE GET_SRC_EA_MODE_5   ;If it isn't, skip to the next check
+                    
+                    MOVE.B D2, D3           ;Copy the Table Mask
+                    ANDI.B TBL_MASK_DEC_ADDR, D3   ;Lets mask out the -(An) bit
+                    BTST.B TBL_MASK_DEC_ADDR, D3     ;Is the -(An) bit active?
+                    BNE GET_SRC_EA_BAD_MODE ;If it isn't, we have a bad mode on our hands
+                    
+                    *Error checking done
+                    
+                    *Suffix processing
+                    MOVE.B EA_SUFFIX_DEC, D0    ;Move the suffix -() into D0
+                    LSL.B D0, #4                ;Move the suffix into the correct position
+                    OR.B D0, D1                 ;Add the suffix to the ea builder
+                    
+                    *Address Register Processing
+                    ORI.B #00001000, D1         ;The 4th bit specifies that its an address reg
+                    MOVE.B D1, -(SP)            ;Load the register to the return value
+                    MOVE.B #1, -(SP)            ;Load how many return values there are (just 1)
+                    
+                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+
+*================== (xxx).W Address Mode ======================================         
+GET_SRC_EA_MODE_5   CMPI.B EA_MODE_W_ADDR, D0   ;Is the mode Indirect Address Registers?
+                    BNE GET_SRC_EA_MODE_6       ;If it isn't, skip to the next check
+                    
+                    *Table Mask Error Checking
+                    MOVE.B D2, D3               ;Copy the Table Mask
+                    ANDI.B TBL_MASK_W_ADDR, D3  ;Lets mask out the (xxx).W bit
+                    BTST.B TBL_MASK_W_ADDR, D3  ;Is the (xxx).W bit active?
+                    BNE GET_SRC_EA_BAD_MODE     ;If it isn't, we have a bad mode on our hands
+                    
+                    *Register Error Checking
+                    CMPI.B EA_W_REG, D1         ;Make sure the mode is %000
+                    BNE GET_SRC_EA_BAD_REG      ;If it is not, send to error handling
+                    
+                    *Error checking done
+                    
+                    *(xxx).W Data Processing
+                    MOVEA.L A2, A4              ;Load a working copy of the current line
+                    ADDA.L #2, A4               ;Move the pointer to the data
+                    MOVE.W (A4), -(SP)          ;Transfer the (xxx).W data to the stack                    
+                    
+                    MOVE.B #2, -(SP)            ;Load how many return values there are (just 1)
+                    
+                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+
+*================== (xxx).L Address Mode ======================================                 
+GET_SRC_EA_MODE_6   CMPI.B EA_MODE_L_ADDR, D0   ;Is the mode (xxx).L?
+                    BNE GET_SRC_EA_MODE_7   ;   If it isn't, skip to the next check
+                    
+                    *Table Mask Error Checking
+                    MOVE.B D2, D3               ;Copy the Table Mask
+                    ANDI.B TBL_MASK_L_ADDR, D3  ;Lets mask out the (xxx).L bit
+                    BTST.B TBL_MASK_L_ADDR, D3  ;Is the (xxx).L bit active?
+                    BNE GET_SRC_EA_BAD_MODE     ;If it isn't, we have a bad mode on our hands
+                                        
+                    *Register Error Checking
+                    CMPI.B EA_L_REG, D1         ;Make sure the mode is %001
+                    BNE GET_SRC_EA_BAD_REG      ;If it is not, send to error handling
+                    
+                    *Error checking done
+                    
+                    *(xxx).L Data Processing
+                    MOVEA.L A2, A4              ;Load a working copy of the current line
+                    ADDA.L #4, A4               ;Move the pointer to the data
+                    MOVE.W (A4), -(SP)          ;Transfer the (xxx).W data to the stack                    
+                    
+                    MOVE.B #4, -(SP)            ;Load how many return values there are (just 1)
+                    
+                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+                    
+GET_SRC_EA_MODE_7   CMPI.B EA_MODE_L_ADDR, D0   ;Is the mode (xxx).L?
+                    BNE GET_SRC_EA_MODE_7   ;   If it isn't, skip to the next check
+                    
+                    *Table Mask Error Checking
+                    MOVE.B D2, D3               ;Copy the Table Mask
+                    ANDI.B TBL_MASK_L_ADDR, D3  ;Lets mask out the (xxx).L bit
+                    BTST.B TBL_MASK_L_ADDR, D3  ;Is the (xxx).L bit active?
+                    BNE GET_SRC_EA_BAD_MODE     ;If it isn't, we have a bad mode on our hands
+                                        
+                    *Register Error Checking
+                    CMPI.B EA_L_REG, D1         ;Make sure the mode is %001
+                    BNE GET_SRC_EA_BAD_REG      ;If it is not, send to error handling
+                    
+                    *Error checking done
+                    
+                    *(xxx).L Data Processing
+                    MOVEA.L A2, A4              ;Load a working copy of the current line
+                    ADDA.L #4, A4               ;Move the pointer to the data
+                    MOVE.W (A4), -(SP)          ;Transfer the (xxx).W data to the stack                    
+                    
+                    MOVE.B #4, -(SP)            ;Load how many return values there are (just 1)
+                    
+                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
 GET_SRC_EA_RETURN
 
 GET_SRC_EA_BAD_ARG  MOVE.B ERR_BAD_ARG, (SP)   ;Load the error constant
@@ -368,6 +492,7 @@ FINISHED_STR        DC.B    'Finished processing instructions.', 0
 NEWLINE_STR         DC.B    CR, LF, 0
 
                     END		START
+
 
 
 
