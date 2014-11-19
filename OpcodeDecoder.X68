@@ -440,7 +440,7 @@ GET_SRC_EA_MODE_0   CMP.B #EA_MODE_DATA_REG, D0   ;Is the mode Data Registers?
                     MOVE.B D1, -(SP)        ;Load the register to the return value
                     MOVE.B #1, -(SP)        ;Load how many return values there are (just 1)
                     
-                    BEQ GET_SRC_EA_RETURN   ;We can return our values now
+                    BRA GET_SRC_EA_RETURN   ;We can return our values now
                     
 *================== Address Register Mode =====================================                  
 GET_SRC_EA_MODE_1   CMP.B #EA_MODE_ADDR_REG, D0   ;Is the mode Address Registers?
@@ -456,7 +456,7 @@ GET_SRC_EA_MODE_1   CMP.B #EA_MODE_ADDR_REG, D0   ;Is the mode Address Registers
                     MOVE.B D1, -(SP)        ;Load the register to the return value
                     MOVE.B #1, -(SP)        ;Load how many return values there are (just 1)
                     
-                    BEQ GET_SRC_EA_RETURN   ;We can return our values now
+                    BRA GET_SRC_EA_RETURN   ;We can return our values now
                     
 *================== Indirect Address Register Mode ============================
 GET_SRC_EA_MODE_2   CMP.B #EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address Registers?
@@ -479,7 +479,7 @@ GET_SRC_EA_MODE_2   CMP.B #EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address 
                     MOVE.B D1, -(SP)            ;Load the register to the return value
                     MOVE.B #1, -(SP)            ;Load how many return values there are (just 1)
                     
-                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+                    BRA GET_SRC_EA_RETURN       ;We can return our values now
 
 *================== Post-Increment Address Register Mode ======================              
 GET_SRC_EA_MODE_3   CMP.B #EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address Registers?
@@ -502,7 +502,7 @@ GET_SRC_EA_MODE_3   CMP.B #EA_MODE_IND_ADDR, D0   ;Is the mode Indirect Address 
                     MOVE.B D1, -(SP)            ;Load the register to the return value
                     MOVE.B #1, -(SP)            ;Load how many return values there are (just 1)
                     
-                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+                    BRA GET_SRC_EA_RETURN       ;We can return our values now
 
 *================== Pre-Decrement Address Register Mode =======================
 GET_SRC_EA_MODE_4   CMP.B #EA_MODE_DEC_ADDR, D0   ;Is the mode Indirect Address Registers?
@@ -525,7 +525,7 @@ GET_SRC_EA_MODE_4   CMP.B #EA_MODE_DEC_ADDR, D0   ;Is the mode Indirect Address 
                     MOVE.B D1, -(SP)            ;Load the register to the return value
                     MOVE.B #1, -(SP)            ;Load how many return values there are (just 1)
                     
-                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+                    BRA GET_SRC_EA_RETURN       ;We can return our values now
 
 *================== (xxx).W Address Mode ======================================         
 GET_SRC_EA_MODE_5   CMPI.B #EA_MODE_W_ADDR, D0   ;Is the mode Indirect Address Registers?
@@ -556,7 +556,7 @@ GET_SRC_EA_MODE_5   CMPI.B #EA_MODE_W_ADDR, D0   ;Is the mode Indirect Address R
                     *Return Size Processing
                     MOVE.B #3, -(SP)            ;Load how many return values there are
                     
-                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+                    BRA GET_SRC_EA_RETURN       ;We can return our values now
 
 *================== (xxx).L Address Mode ======================================                 
 GET_SRC_EA_MODE_6   CMP.B #EA_MODE_L_ADDR, D0   ;Is the mode (xxx).L?
@@ -587,7 +587,7 @@ GET_SRC_EA_MODE_6   CMP.B #EA_MODE_L_ADDR, D0   ;Is the mode (xxx).L?
                     *Return Size Processing
                     MOVE.B #5, -(SP)            ;Load how many return values there are
                     
-                    BEQ GET_SRC_EA_RETURN       ;We can return our values now
+                    BRA GET_SRC_EA_RETURN       ;We can return our values now
                     
 *================== #<data> Address Mode ======================================
 GET_SRC_EA_MODE_7   CMP.B #EA_MODE_L_ADDR, D0   ;Is the mode #<data>?
