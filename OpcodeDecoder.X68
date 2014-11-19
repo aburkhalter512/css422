@@ -2,9 +2,10 @@ START               ORG		$1000
 
 START_ADDRESS       EQU     $4000
 
-ADD_INSTR           EQU     $D110
+*ADD_INSTR           EQU     %1101000100010000
+ADD_INSTR           EQU     $D2385000
 BRA_INSTR           EQU     $6001
-MOVE_INSTR          EQU     $1200
+MOVE_INSTR          EQU     %0001001000000000
 INVALID_INSTR       EQU     $FFFF
 
 ADD_OC              EQU     $D000
@@ -139,96 +140,183 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
                     *Temp program kill
                     MOVE.B  #9, D0
                     TRAP    #15
-                    
-                    MOVE.W  #MOVE_INSTR, START_ADDRESS
+
+                    MOVE.L  #ADD_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
+                    
+                    ADD.B   $5000, D1
                     
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_BRA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
-PROCESSED_OC        MOVE.B  #9, D0
+PROCESSED_OC        MOVE.B  D3, -(SP)
+                    MOVE.B  D1, -(SP)
+                    JSR     GET_SOURCE_EA
+
+                    MOVE.B  #9, D0
                     TRAP    #15
 
 *--------------------------------------------------
 * ADD
 *--------------------------------------------------
-CHECK_ADD_OC        MOVE.W  (A3), D3
-                    AND.W   #ADD_OC_MASK, D3
-                    CMP.W   #ADD_OC, D3
+CHECK_ADD_OC        MOVE.W  (A3), D0
+                    AND.W   #ADD_OC_MASK, D0
+                    CMP.W   #ADD_OC, D0
                     BEQ.W   PROCESS_ADD_OC
                     RTS
 
 PROCESS_ADD_OC      MOVE.L  (SP)+, D0
-                    BRA     PROCESSED_OC
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
                     
+                    * Opmode
+                    MOVE.W  (A3), D0
+                    LSL.W   #7, D0
+                    LSR.W   #8, D0
+                    LSR.W   #5, D0
+                    
+                    CMPI.B  #3, D0
+                    BLT     PROCESS_ADD_OC_SRC
+                    BGT     PROCESS_ADD_OC_DST
+                    BRA     INVALID_OC
+
+PROCESS_ADD_OC_SRC  ADDI.B  #1, D0
+                    LSL.B   #3, D0
+                    MOVE.B  D0, D1
+                    
+                    * Destination Register
+                    MOVE.W  (A3), D2
+                    LSL.W   #4, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    OR.B    D2, D0
+                    
+                    * Source Mode
+                    MOVE.W  (A3), D2
+                    LSL.W   #8, D2
+                    LSL.W   #2, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    LSL.W   #5, D2
+                    OR.B    D2, D1
+                    
+                    * Source Register
+                    MOVE.W  (A3), D2
+                    LSL.W   #8, D2
+                    LSL.W   #5, D2
+                    LSR.W   #8, D2
+                    LSR.W   #8, D2
+                    OR.B    D2, D1
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_ADD_OC_DST  SUBI.B  #3, D0
+                    LSL.B   #3, D0
+                    MOVE.B  D0, D1
+                    
+                    * Destination Register
+                    MOVE.W  (A3), D2
+                    LSL.W   #8, D2
+                    LSL.W   #5, D2
+                    LSR.W   #8, D2
+                    LSR.W   #8, D2
+                    OR.B    D2, D0
+                    
+                    * Destination Mode
+                    MOVE.W  (A3), D2
+                    LSL.W   #8, D2
+                    LSL.W   #2, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    LSL.W   #5, D2
+                    OR.B    D2, D0
+                    
+                    * Source Register
+                    MOVE.W  (A3), D2
+                    LSL.W   #4, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    OR.B    D2, D1
+                    
+                    BRA     PROCESSED_OC
 
 *--------------------------------------------------
 * BRA
 *--------------------------------------------------
-CHECK_BRA_OC        MOVE.W  (A3), D3
-                    AND.W   #BRA_OC_MASK, D3
-                    CMP.W   #BRA_OC, D3
+CHECK_BRA_OC        MOVE.W  (A3), D0
+                    AND.W   #BRA_OC_MASK, D0
+                    CMP.W   #BRA_OC, D0
                     BEQ.W   PROCESS_BRA_OC
                     RTS
 
 PROCESS_BRA_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    
                     BRA     PROCESSED_OC
 
-*------------------------------------------------
+*----------------------------------------------------
 * MOVE
-*------------------------------------------------
-CHECK_MOVE_OC       MOVE.W  (A3), D0            ; Create a copy of the current instruction.
-                    AND.W   #MOVE_OC_MASK, D0   ; Apply the MOVE bit mask.
-                    CMP.W   #MOVE_OC, D0        ; Check if the result of the bit mask application is a MOVE instruction.
-                    BEQ.W   PROCESS_MOVE_OC     ; Branch and process if it is.
-                    RTS                         ; Return since the instruction is not MOVE.
+*----------------------------------------------------
+CHECK_MOVE_OC       MOVE.W  (A3), D0                ; Create a copy of the current instruction.
+                    AND.W   #MOVE_OC_MASK, D0       ; Apply the MOVE bit mask.
+                    CMP.W   #MOVE_OC, D0            ; Check if the result of the bit mask application is a MOVE instruction.
+                    BEQ.W   PROCESS_MOVE_OC         ; Branch and process if it is.
+                    RTS                             ; Return since the instruction is not MOVE.
 
-PROCESS_MOVE_OC     MOVE.L  (SP)+, D0           ; Pop the RTS address from the stack.
-                    CLR     D0                  ; Clear D0 for processing.
-                    CLR     D1                  ; Clear D1 for processing.
-                    CLR     D2                  ; Clear D2 for processing.
+PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from the stack.
+                    CLR     D0                      ; Clear D0 for processing.
+                    CLR     D1                      ; Clear D1 for processing.
+                    CLR     D2                      ; Clear D2 for processing.
+                    
+                    * Size
+                    MOVE.W  (A3), D0                ; Create a copy of the current instruction.
+                    LSL.W   #2, D0                  ; Shift left 2 bits.
+                    LSR.W   #8, D0                  ; Shift right 8 bits.
+                    LSR.W   #6, D0                  ; Shift right 6 bits.
+                    LSL.W   #3, D0                  ; Shift left 3 bits. Size now isolated in the form 000SS000.
+                    MOVE.B  D0, D1                  ; Copy the size to D1 for the source EA.
+                    
+                    * Destination Register
+                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
+                    LSL.W   #4, D2                  ; Shift left 4 bits.
+                    LSR.W   #8, D2                  ; Shift right 8 bits.
+                    LSR.W   #5, D2                  ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
+                    OR.B    D2, D0                  ; OR the register with the size in D0.
+                                                    ; Result: 000SSRRR.
+                    * Destination Mode
+                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
+                    LSL.W   #7, D2                  ; Shift left 7 bits.
+                    LSR.W   #8, D2                  ; Shift right 8 bits.
+                    LSR.W   #5, D2                  ; Shift right 5 bits.
+                    LSL.W   #5, D2                  ; Shift left 5 bits. Destination mode now isolated in the form MMM00000.
+                    OR.B    D2, D0                  ; OR the mode with the size and register in D0.
+                                                    ; Result: MMMSSRRR. Destination EA packed byte complete.
+                    * Source Mode
+                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
+                    LSL.W   #8, D2                  ; Shift left 8 bits.
+                    LSL.W   #2, D2                  ; Shift left 2 bits.
+                    LSR.W   #8, D2                  ; Shift right 8 bits.
+                    LSR.W   #5, D2                  ; Shift right 5 bits.
+                    LSL.W   #5, D2                  ; Shift left 5 bits. Source mode now isolated in the form MMM00000.
+                    OR.B    D2, D1                  ; OR the mode with the size in D1.
+                                                    ; Result: MMMSS000.
+                    * Source Register
+                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
+                    LSL.W   #8, D2                  ; Shift left 8 bits.
+                    LSL.W   #5, D2                  ; Shift left 5 bits.
+                    LSR.W   #8, D2                  ; Shift right 8 bits.
+                    LSR.W   #5, D2                  ; Shift right 5 bits. Source register now isolated in the form 00000RRR.
+                    OR.B    D2, D1                  ; OR the register with the size and mode in D1.
+                                                    ; Result: MMMSSRRR. Source EA packed byte complete.
 
-                    MOVE.W  (A3), D0            ; Create a copy of the current instruction.
-                    LSL.W   #2, D0              ; Shift left 2 bits.
-                    LSR.W   #8, D0              ; Shift right 8 bits.
-                    LSR.W   #6, D0              ; Shift right 6 bits.
-                    LSL.W   #3, D0              ; Shift left 3 bits. Size now isolated in the form 000SS000.
-                    MOVE.B  D0, D1              ; Copy the size to D1 for the source EA.
-                    
-                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
-                    LSL.W   #4, D2              ; Shift left 4 bits.
-                    LSR.W   #8, D2              ; Shift right 8 bits.
-                    LSR.W   #5, D2              ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
-                    OR.B    D2, D0              ; OR the register with the size in D0.
-                                                ; Result: 000SSRRR.
-                    
-                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
-                    LSL.W   #7, D2              ; Shift left 7 bits.
-                    LSR.W   #8, D2              ; Shift right 8 bits.
-                    LSR.W   #5, D2              ; Shift right 5 bits.
-                    LSL.W   #5, D2              ; Shift left 5 bits. Destination mode now isolated in the form MMM00000.
-                    OR.B    D2, D0              ; OR the mode with the size and register in D0.
-                                                ; Result: MMMSSRRR. Destination EA packed byte complete.
-                    
-                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
-                    LSL.W   #8, D2              ; Shift left 8 bits.
-                    LSL.W   #2, D2              ; Shift left 2 bits.
-                    LSR.W   #8, D2              ; Shift right 8 bits.
-                    LSR.W   #5, D2              ; Shift right 5 bits.
-                    LSL.W   #5, D2              ; Shift left 5 bits. Source mode now isolated in the form MMM00000.
-                    OR.B    D2, D1              ; OR the mode with the size in D1.
-                                                ; Result: MMMSS000.
-                    
-                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
-                    LSL.W   #8, D2              ; Shift left 8 bits.
-                    LSL.W   #5, D2              ; Shift left 5 bits.
-                    LSR.W   #8, D2              ; Shift right 8 bits.
-                    LSR.W   #5, D2              ; Shift right 5 bits. Source register now isolated in the form 00000RRR.
-                    OR.B    D2, D1              ; OR the register with the size and mode in D1.
-                                                ; Result: MMMSSRRR. Source EA packed byte complete.
+                    MOVE.L  #TBL_MASK_MOVE_DST, D2  ; Move the destination EA mask to D2.
+                    MOVE.L  #TBL_MASK_MOVE_SRC, D3  ; Move the source EA mask to D3.
 
                     BRA     PROCESSED_OC        ; We are done processing.
 
@@ -590,6 +678,8 @@ TEST_MOVE           DC.B    $33, $FC, $FD, $B9, $13, $24, $35, $46 ;MOVE.W #$FDB
 TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24    ;MOVE.W $3546, $1324
 
                     END		START
+
+
 
 
 
