@@ -149,86 +149,90 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
-PRINT_STR           MOVE.B  #14, D0
+PROCESSED_OC        MOVE.B  #9, D0
                     TRAP    #15
-                    RTS
-
-PRINT_NEWLINE_STR   LEA     NEWLINE_STR, A1
-                    JSR     PRINT_STR
-
-PRINT_CHECK_STR     LEA     CHECK_INSTR_STR, A1
-                    JSR     PRINT_STR
-                    RTS
-
-PRINT_DETECT_STR    LEA     DETECT_INSTR_STR, A1
-                    JSR     PRINT_STR
-                    RTS
 
 *--------------------------------------------------
 * ADD
 *--------------------------------------------------
-CHECK_ADD_OC        JSR     PRINT_CHECK_STR
-                    LEA     ADD_INSTR_STR, A1
-                    JSR     PRINT_STR
-                    
-                    MOVE.W  (A3), D3
+CHECK_ADD_OC        MOVE.W  (A3), D3
                     AND.W   #ADD_OC_MASK, D3
                     CMP.W   #ADD_OC, D3
                     BEQ.W   PROCESS_ADD_OC
                     RTS
 
-PROCESS_ADD_OC      JSR     PRINT_DETECT_STR
-                    LEA     ADD_INSTR_STR, A1
-                    JSR     PRINT_STR
+PROCESS_ADD_OC      MOVE.L  (SP)+, D0
+                    BRA     PROCESSED_OC
                     
-                    BRA     FINISH
 
 *--------------------------------------------------
 * BRA
 *--------------------------------------------------
-CHECK_BRA_OC        JSR     PRINT_CHECK_STR
-                    LEA     BRA_INSTR_STR, A1
-                    JSR     PRINT_STR
-                    
-                    MOVE.W  (A3), D3
+CHECK_BRA_OC        MOVE.W  (A3), D3
                     AND.W   #BRA_OC_MASK, D3
                     CMP.W   #BRA_OC, D3
                     BEQ.W   PROCESS_BRA_OC
                     RTS
 
-PROCESS_BRA_OC      JSR     PRINT_DETECT_STR
-                    LEA     BRA_INSTR_STR, A1
-                    JSR     PRINT_STR
-                    
-                    BRA     FINISH
+PROCESS_BRA_OC      MOVE.L  (SP)+, D0
+                    BRA     PROCESSED_OC
 
-*--------------------------------------------------
+*------------------------------------------------
 * MOVE
-*--------------------------------------------------
-CHECK_MOVE_OC       JSR     PRINT_CHECK_STR
-                    LEA     MOVE_INSTR_STR, A1
-                    JSR     PRINT_STR
+*------------------------------------------------
+CHECK_MOVE_OC       MOVE.W  (A3), D0            ; Create a copy of the current instruction.
+                    AND.W   #MOVE_OC_MASK, D0   ; Apply the MOVE bit mask.
+                    CMP.W   #MOVE_OC, D0        ; Check if the result of the bit mask application is a MOVE instruction.
+                    BEQ.W   PROCESS_MOVE_OC     ; Branch and process if it is.
+                    RTS                         ; Return since the instruction is not MOVE.
+
+PROCESS_MOVE_OC     MOVE.L  (SP)+, D0           ; Pop the RTS address from the stack.
+                    CLR     D0                  ; Clear D0 for processing.
+                    CLR     D1                  ; Clear D1 for processing.
+                    CLR     D2                  ; Clear D2 for processing.
+
+                    MOVE.W  (A3), D0            ; Create a copy of the current instruction.
+                    LSL.W   #2, D0              ; Shift left 2 bits.
+                    LSR.W   #8, D0              ; Shift right 8 bits.
+                    LSR.W   #6, D0              ; Shift right 6 bits.
+                    LSL.W   #3, D0              ; Shift left 3 bits. Size now isolated in the form 000SS000.
+                    MOVE.B  D0, D1              ; Copy the size to D1 for the source EA.
                     
-                    MOVE.W  (A3), D3
-                    AND.W   #MOVE_OC_MASK, D3
-                    CMP.W   #MOVE_OC, D3
-                    BEQ.W   PROCESS_MOVE_OC
-                    RTS
-
-PROCESS_MOVE_OC     JSR     PRINT_DETECT_STR
-                    LEA     MOVE_INSTR_STR, A1
-                    JSR     PRINT_STR
+                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
+                    LSL.W   #4, D2              ; Shift left 4 bits.
+                    LSR.W   #8, D2              ; Shift right 8 bits.
+                    LSR.W   #5, D2              ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
+                    OR.B    D2, D0              ; OR the register with the size in D0.
+                                                ; Result: 000SSRRR.
                     
-                    BRA     FINISH
+                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
+                    LSL.W   #7, D2              ; Shift left 7 bits.
+                    LSR.W   #8, D2              ; Shift right 8 bits.
+                    LSR.W   #5, D2              ; Shift right 5 bits.
+                    LSL.W   #5, D2              ; Shift left 5 bits. Destination mode now isolated in the form MMM00000.
+                    OR.B    D2, D0              ; OR the mode with the size and register in D0.
+                                                ; Result: MMMSSRRR. Destination EA packed byte complete.
+                    
+                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
+                    LSL.W   #8, D2              ; Shift left 8 bits.
+                    LSL.W   #2, D2              ; Shift left 2 bits.
+                    LSR.W   #8, D2              ; Shift right 8 bits.
+                    LSR.W   #5, D2              ; Shift right 5 bits.
+                    LSL.W   #5, D2              ; Shift left 5 bits. Source mode now isolated in the form MMM00000.
+                    OR.B    D2, D1              ; OR the mode with the size in D1.
+                                                ; Result: MMMSS000.
+                    
+                    MOVE.W  (A3), D2            ; Create a copy of the current instruction.
+                    LSL.W   #8, D2              ; Shift left 8 bits.
+                    LSL.W   #5, D2              ; Shift left 5 bits.
+                    LSR.W   #8, D2              ; Shift right 8 bits.
+                    LSR.W   #5, D2              ; Shift right 5 bits. Source register now isolated in the form 00000RRR.
+                    OR.B    D2, D1              ; OR the register with the size and mode in D1.
+                                                ; Result: MMMSSRRR. Source EA packed byte complete.
 
-INVALID_OC          LEA     INVALID_STR, A1
-                    JSR     PRINT_STR
+                    BRA     PROCESSED_OC        ; We are done processing.
 
-FINISH              LEA     FINISHED_STR, A1
-                    JSR     PRINT_STR
-                
-                    MOVE.B  #9, D0
-                    TRAP    #15
+INVALID_OC          RTS
                     
 * =============================================================================
 * GET_SOURCE_EA
@@ -580,22 +584,13 @@ GET_SRC_EA_OVERFLOW MOVE.B #ERR_STACK_OVERFLOW, (SP)   ;Load the error constant
 * =============================================================================
 
 ;==================== String Literals =========================================
-CHECK_INSTR_STR     DC.B    'Checking for instruction: ', 0
-DETECT_INSTR_STR    DC.B    'Detected instruction: ', 0
 
-ADD_INSTR_STR       DC.B    'ADD(A)', 0
-BRA_INSTR_STR       DC.B    'BRA', 0
-MOVE_INSTR_STR      DC.B    'MOVE(A)', 0
-
-INVALID_STR         DC.B    'Invalid instruction detected.', 0
-FINISHED_STR        DC.B    'Finished processing instructions.', 0
-NEWLINE_STR         DC.B    CR, LF, 0
-                    
 ;=================== Test Data ================================================
 TEST_MOVE           DC.B    $33, $FC, $FD, $B9, $13, $24, $35, $46 ;MOVE.W #$FDB9, $13243546
 TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24    ;MOVE.W $3546, $1324
 
                     END		START
+
 
 
 
