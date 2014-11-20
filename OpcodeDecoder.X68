@@ -87,22 +87,22 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * ================== Begin Program ============================================
 * =============================================================================
                     *Test Program
-                    *TEST_MOVE ==========================================
+                    *TEST_MOVE_2 ==========================================
                     MOVE.B TBL_MASK_MOVE_SRC, -(SP)     ;Load the Table mask argument
-                    LEA TEST_MOVE, A2
+                    LEA TEST_MOVE_2, A2
                     MOVE.W (A2), D0              ;Get the instruction data
                     ANDI.W #%0000000000111111, D0       ;Isolate the source mode and register
                     MOVE.B D0, D1                       ;Copy the mode and reg
                     
                     *Isolate the mode
                     LSL.B #2, D1                        ;Move the mode to the left most bits
-                    ANDI.B #%11100000, D1               ;Isolate the mode in the correct position
+                    MOVE.B #%11100000, D1               ;GOOD MODE MANUALLY ENTERED HERE!!!!!!!!!!!
                     
                     *Isolate the reg
-                    ANDI.B #%00000111, D0               ;Isolate the reg in the correct position
+                    MOVE.B #%00000111, D0               ;BAD REGISTER FOR MODE 111!!!!!!!!!!!!!!!!
                     
                     *Pack the size data
-                    ORI.B #%00010000, D0                ;10 means word (middle two bits)
+                    ORI.B #%00000000, D0                ;BAD ARGUMENT!!!!!!!!!!!!!!
                     
                     *Pack in the mode
                     OR.B D1, D0                         ;Pack in the mode
@@ -349,8 +349,7 @@ INVALID_OC          RTS
 *           This value specifies how many bytes this subroutine has pushed to
 *           the stack (except for this byte). The expected values are 1-5.
 *       ea: byte
-*           THIS IS ONLY RETURNED WHEN THERE IS NO DATA (IE EVERY OTHER MODE
-*           BESIDES 111). This is a bit packed byte, storing 3 distinct pieces 
+*           This is a bit packed byte, storing 3 distinct pieces 
 *           of data.
 *
 *           Bit 1 specifies if this is an error code or not. If bit 1 is 0,
@@ -364,7 +363,8 @@ INVALID_OC          RTS
 *           Bits 6-8 contains the suffix for the registers or the absolute
 *           address. 000 corresponds to no suffix.
 *           001 corresponds to (An). 010 corresponds to -(An). 011 corresponds
-*           to (An)+
+*           to (An)+. 100 corresponds to (xxx).W. 101 corresponds to (xxx).L.
+*           111 corresponds to #<data>
 *       data: byte (0-4)
 *           THIS IS ONLY RETURNED WHEN THERE IS DATA (IE ONLY MODE 111).
 *           This is a variable size return value, and the size of the data
@@ -637,30 +637,30 @@ GET_SRC_EA_MODE_7_END MOVE.B #EA_SUFFIX_DATA, D0      ;Move the suffix #<data> i
                     *Return Size Processing
                     MOVE.B D1, -(SP)            ;Load how many return values there are
                     
-                    MOVE.L D7, -(SP)            ;Put the rts reference back
-GET_SRC_EA_RETURN   RTS                         ;Successful program execution
+GET_SRC_EA_RETURN   MOVE.L D7, -(SP)            ;Put the rts reference back
+                    RTS                         ;Successful program execution
 
-GET_SRC_EA_BAD_ARG  MOVE.B #ERR_BAD_ARG, (SP)   ;Load the error constant
+GET_SRC_EA_BAD_ARG  MOVE.B #ERR_BAD_ARG, -(SP)   ;Load the error constant
                     MOVE.B #1, -(SP)        ;Load the return array size
                     MOVE.L D7, -(SP)        ;Put the rts reference back
                     RTS                     ;Return to whoever called us
                     
-GET_SRC_EA_BAD_MODE MOVE.B #ERR_BAD_MODE, (SP)   ;Load the error constant
+GET_SRC_EA_BAD_MODE MOVE.B #ERR_BAD_MODE, -(SP)   ;Load the error constant
                     MOVE.B #1, -(SP)        ;Load the return array size
                     MOVE.L D7, -(SP)        ;Put the rts reference back
                     RTS                     ;Return to whoever called us
                     
-GET_SRC_EA_BAD_REG  MOVE.B #ERR_BAD_REG,(SP)   ;Load the error constant
+GET_SRC_EA_BAD_REG  MOVE.B #ERR_BAD_REG, -(SP)   ;Load the error constant
                     MOVE.B #1, -(SP)        ;Load the return array size
                     MOVE.L D7, -(SP)        ;Put the rts reference back
                     RTS                     ;Return to whoever called us
                     
-GET_SRC_EA_BAD_RANGE MOVE.B #ERR_OUT_OF_RANGE, (SP)   ;Load the error constant
+GET_SRC_EA_BAD_RANGE MOVE.B #ERR_OUT_OF_RANGE, -(SP)   ;Load the error constant
                     MOVE.B #1, -(SP)        ;Load the return array size
                     MOVE.L D7, -(SP)        ;Put the rts reference back
                     RTS                     ;Return to whoever called us
                     
-GET_SRC_EA_OVERFLOW MOVE.B #ERR_STACK_OVERFLOW, (SP)   ;Load the error constant
+GET_SRC_EA_OVERFLOW MOVE.B #ERR_STACK_OVERFLOW, -(SP)   ;Load the error constant
                     MOVE.B #1, -(SP)        ;Load the return array size
                     MOVE.L D7, -(SP)        ;Put the rts reference back
                     RTS                     ;Return to whoever called us
@@ -674,10 +674,12 @@ GET_SRC_EA_OVERFLOW MOVE.B #ERR_STACK_OVERFLOW, (SP)   ;Load the error constant
 ;==================== String Literals =========================================
 
 ;=================== Test Data ================================================
-TEST_MOVE           DC.B    $33, $FC, $FD, $B9, $13, $24, $35, $46 ;MOVE.W #$FDB9, $13243546
-TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24    ;MOVE.W $3546, $1324
+TEST_MOVE           DC.B    $33, $FC, $FD, $B9, $13, $24, $35, $46 		;MOVE.W #$FDB9, $13243546
+TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24   				;MOVE.W $3546, $1324
+TEST_MOVE_2         DC.B    $32, $00                                    ;MOVE.W D0, D1
 
                     END		START
+
 
 
 
