@@ -1,21 +1,24 @@
 START               ORG		$1000
 
 START_ADDRESS       EQU     $4000
+STR_STACK           EQU     $8000
 
-*ADD_INSTR           EQU     %1101000100010000
-ADD_INSTR           EQU     $D2385000
-BRA_INSTR           EQU     $6001
-MOVE_INSTR          EQU     %0001001000000000
+ADD_INSTR           EQU     $D2385000           ; ADD.B $5000, D1
+ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
+ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
+AND_INSTR           EQU     $C63C0055           ; AND.W #%01010101, D3
+CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
+CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
+CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
+MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 INVALID_INSTR       EQU     $FFFF
 
 ADD_OC              EQU     $D000
-ADD_OC_MASK         EQU     $F000
-
-BRA_OC              EQU     $6000
-BRA_OC_MASK         EQU     $FF00
-
+ADDQ_OC             EQU     $5000
+AND_OC              EQU     $C000
+CMP_OC              EQU     $B000
+CMPI_OC             EQU     $0C00
 MOVE_OC             EQU     $0000
-MOVE_OC_MASK        EQU     $0000
 
 LF                  EQU     $0A
 CR                  EQU     $0D
@@ -79,6 +82,16 @@ TBL_MASK_W_ADDR     EQU     %00100000
 TBL_MASK_L_ADDR     EQU     %01000000
 TBL_MASK_DATA       EQU     %10000000
 
+* ADD Masks
+TBL_MASK_ADD_SRC    EQU     %11111111 ;Allow all
+TBL_MASK_ADD_DST    EQU     %01111100 ;Allow only memory alterable addressing modes
+
+* ADDA Masks
+TBL_MASK_ADDA_SRC   EQU     %11111111 ;Allow all
+
+* ADDQ Masks
+TBL_MASK_ADDQ_DST   EQU     %01111111 ;Allow all alterable addressing modes
+
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
@@ -86,241 +99,547 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    *Test Program
-                    *TEST_MOVE_2 ==========================================
-                    MOVE.B TBL_MASK_MOVE_SRC, -(SP)     ;Load the Table mask argument
-                    LEA TEST_MOVE_2, A2
-                    MOVE.W (A2), D0              ;Get the instruction data
-                    ANDI.W #%0000000000111111, D0       ;Isolate the source mode and register
-                    MOVE.B D0, D1                       ;Copy the mode and reg
-                    
-                    *Isolate the mode
-                    LSL.B #2, D1                        ;Move the mode to the left most bits
-                    MOVE.B #%11100000, D1               ;GOOD MODE MANUALLY ENTERED HERE!!!!!!!!!!!
-                    
-                    *Isolate the reg
-                    MOVE.B #%00000111, D0               ;BAD REGISTER FOR MODE 111!!!!!!!!!!!!!!!!
-                    
-                    *Pack the size data
-                    ORI.B #%00000000, D0                ;BAD ARGUMENT!!!!!!!!!!!!!!
-                    
-                    *Pack in the mode
-                    OR.B D1, D0                         ;Pack in the mode
-                    
-                    *D0 now contains ||mode|| ||size|| ||reg|| (3 bits, 2 bits, 3 bits)
-                    MOVE.B D0, -(SP)                    ;Load the eaType
-                    
-                    JSR GET_SOURCE_EA                   ;Lets do this
-                    
-                    *TEST_MOVE_1 ===========================================
-                    MOVE.B TBL_MASK_MOVE_SRC, -(SP)     ;Load the Table mask argument
-                    LEA TEST_MOVE_1, A2
-                    MOVE.W (A2), D0              ;Get the instruction data
-                    ANDI.W #%0000000000111111, D0       ;Isolate the source mode and register
-                    MOVE.B D0, D1                       ;Copy the mode and reg
-                    
-                    *Isolate the mode
-                    LSL.B #2, D1                        ;Move the mode to the left most bits
-                    ANDI.B #%11100000, D1               ;Isolate the mode in the correct position
-                    
-                    *Isolate the reg
-                    ANDI.B #%00000111, D0               ;Isolate the reg in the correct position
-                    
-                    *Pack the size data
-                    ORI.B #%00011000, D0                ;10 means word (middle two bits)
-                    
-                    *Pack in the mode
-                    OR.B D1, D0                         ;Pack in the mode
-                    
-                    *D0 now contains ||mode|| ||size|| ||reg|| (3 bits, 2 bits, 3 bits)
-                    MOVE.B D0, -(SP)                    ;Load the eaType
-                    
-                    JSR GET_SOURCE_EA                   ;Lets do this
-
-                    *Temp program kill
-                    MOVE.B  #9, D0
-                    TRAP    #15
-
-                    MOVE.L  #ADD_INSTR, START_ADDRESS
+                    MOVE.L  #CMPI_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
-                    ADD.B   $5000, D1
+                    JSR     PROCESS_OC
                     
-                    JSR     CHECK_ADD_OC
-                    JSR     CHECK_BRA_OC
-                    JSR     CHECK_MOVE_OC
-                    BRA     INVALID_OC
-
-PROCESSED_OC        MOVE.B  D3, -(SP)
-                    MOVE.B  D1, -(SP)
-                    JSR     GET_SOURCE_EA
-
                     MOVE.B  #9, D0
                     TRAP    #15
 
 *--------------------------------------------------
-* ADD
+* PROCESS_OC Subroutine
+*--------------------------------------------------       
+PROCESS_OC          MOVE.L  -(SP), D7
+                    JSR     CHECK_ADD_OC
+                    JSR     CHECK_ADDQ_OC
+                    JSR     CHECK_AND_OC
+                    JSR     CHECK_CMP_OC
+                    JSR     CHECK_CMPI_OC
+                    JSR     CHECK_MOVE_OC
+                    BRA     INVALID_OC
+
+PROCESSED_OC        MOVE.L  (SP)+, D7
+                    RTS
+
+INVALID_OC          MOVE.L  (SP)+, D7
+                    RTS
+
 *--------------------------------------------------
-CHECK_ADD_OC        MOVE.W  (A3), D0
-                    AND.W   #ADD_OC_MASK, D0
+* ADD & ADDA
+*--------------------------------------------------
+CHECK_ADD_OC        MOVE.W  (A2), D0
+                    AND.W   #ADD_OC, D0
                     CMP.W   #ADD_OC, D0
-                    BEQ.W   PROCESS_ADD_OC
+                    BEQ     PROCESS_ADD_OC
                     RTS
 
 PROCESS_ADD_OC      MOVE.L  (SP)+, D0
                     CLR     D0
                     CLR     D1
                     CLR     D2
+                    CLR     D3
                     
                     * Opmode
-                    MOVE.W  (A3), D0
+                    MOVE.W  (A2), D0
                     LSL.W   #7, D0
                     LSR.W   #8, D0
                     LSR.W   #5, D0
                     
+                    CMPI.B  #7, D0
+                    BEQ     PROCESS_ADDA_OC
+                    
                     CMPI.B  #3, D0
+                    BEQ     PROCESS_ADDA_OC
                     BLT     PROCESS_ADD_OC_SRC
                     BGT     PROCESS_ADD_OC_DST
-                    BRA     INVALID_OC
 
-PROCESS_ADD_OC_SRC  ADDI.B  #1, D0
-                    LSL.B   #3, D0
+PROCESS_ADDA_OC     JSR     SET_ADDA_OC_SIZE
+
                     MOVE.B  D0, D1
-                    
-                    * Destination Register
-                    MOVE.W  (A3), D2
-                    LSL.W   #4, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
-                    OR.B    D2, D0
-                    
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+
                     * Source Mode
-                    MOVE.W  (A3), D2
-                    LSL.W   #8, D2
-                    LSL.W   #2, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
-                    LSL.W   #5, D2
-                    OR.B    D2, D1
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
                     
                     * Source Register
-                    MOVE.W  (A3), D2
-                    LSL.W   #8, D2
-                    LSL.W   #5, D2
-                    LSR.W   #8, D2
-                    LSR.W   #8, D2
-                    OR.B    D2, D1
-                    
-                    BRA     PROCESSED_OC
-
-PROCESS_ADD_OC_DST  SUBI.B  #3, D0
-                    LSL.B   #3, D0
-                    MOVE.B  D0, D1
-                    
-                    * Destination Register
-                    MOVE.W  (A3), D2
-                    LSL.W   #8, D2
-                    LSL.W   #5, D2
-                    LSR.W   #8, D2
-                    LSR.W   #8, D2
-                    OR.B    D2, D0
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
                     
                     * Destination Mode
-                    MOVE.W  (A3), D2
-                    LSL.W   #8, D2
-                    LSL.W   #2, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
-                    LSL.W   #5, D2
-                    OR.B    D2, D0
+                    MOVE.B  #1, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D2
+
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+SET_ADDA_OC_SIZE    CMPI.B  #3, D0
+                    BEQ     SET_ADDA_SIZE_WORD
+                    
+                    CMPI.B  #7, D0
+                    BEQ     SET_ADDA_SIZE_LONG
+                    
+                    BRA     INVALID_OC
+
+SET_ADDA_SIZE_WORD  MOVE.B  #1, D0
+                    RTS
+
+SET_ADDA_SIZE_LONG  MOVE.B  #2, D0
+                    RTS
+
+PROCESS_ADD_OC_SRC  MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
                     
                     * Source Register
-                    MOVE.W  (A3), D2
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * Not needed since mode is 000.
+
+                    * Destination Register
+                    MOVE.W  (A2), D2
                     LSL.W   #4, D2
                     LSR.W   #8, D2
                     LSR.W   #5, D2
-                    OR.B    D2, D1
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_ADD_OC_DST  SUBI.B  #4, D0
+                    MOVE.B  D0, D2
+                    ADDI.B  #1, D2
+                    LSL.B   #3, D2
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+                    
+                    * Source Register
+                    MOVE.W  (A2), D1
+                    LSL.W   #4, D1
+                    LSR.W   #8, D1
+                    LSR.W   #5, D1
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #8, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
                     
                     BRA     PROCESSED_OC
 
 *--------------------------------------------------
-* BRA
+* ADDQ
 *--------------------------------------------------
-CHECK_BRA_OC        MOVE.W  (A3), D0
-                    AND.W   #BRA_OC_MASK, D0
-                    CMP.W   #BRA_OC, D0
-                    BEQ.W   PROCESS_BRA_OC
+CHECK_ADDQ_OC       MOVE.W  (A2), D0
+                    AND.W   #ADDQ_OC, D0
+                    CMP.W   #ADDQ_OC, D0
+                    BEQ     PROCESS_ADDQ_OC
                     RTS
 
-PROCESS_BRA_OC      MOVE.L  (SP)+, D0
+PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     CLR     D0
                     CLR     D1
                     CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #5, D0
+                    MOVE.B  D0, D2
+                    ADDI.W  #1, D2
+                    LSL.W   #3, D2
+                    
+                    * Data
+                    MOVE.W  (A2), D1
+                    LSL.W   #4, D1
+                    LSR.W   #8, D1
+                    LSR.W   #5, D1
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*----------------------------------------------------
+* AND
+*----------------------------------------------------
+CHECK_AND_OC        MOVE.W  (A2), D0
+                    AND.W   #AND_OC, D0
+                    CMP.W   #AND_OC, D0
+                    BEQ     PROCESS_AND_OC
+                    RTS
+
+PROCESS_AND_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Opmode
+                    MOVE.W  (A2), D0
+                    LSL.W   #7, D0
+                    LSR.W   #8, D0
+                    LSR.W   #5, D0
+                    
+                    CMPI.B  #7, D0
+                    BEQ     INVALID_OC
+                    
+                    CMPI.B  #3, D0
+                    BLT     PROCESS_AND_OC_SRC
+                    BGT     PROCESS_AND_OC_DST
+                    BRA     INVALID_OC
+
+PROCESS_AND_OC_SRC  MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * Not needed since mode is 000.
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D2
+                    LSL.W   #4, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_AND_OC_DST  SUBI.B  #4, D0
+                    MOVE.B  D0, D2
+                    ADDI.B  #1, D2
+                    LSL.B   #3, D2
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+
+                    * Source Register
+                    MOVE.W  (A2), D1
+                    LSL.W   #4, D1
+                    LSR.W   #8, D1
+                    LSR.W   #5, D1
+
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*----------------------------------------------------
+* CMP & CMPA
+*----------------------------------------------------
+CHECK_CMP_OC        MOVE.W  (A2), D0
+                    AND.W   #CMP_OC, D0
+                    CMP.W   #CMP_OC, D0
+                    BEQ     PROCESS_CMP_OC
+                    RTS
+
+PROCESS_CMP_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+
+                    * Source Mode
+                    MOVE.W  (A2), D1
+                    LSL.W   #8, D1
+                    LSL.W   #2, D1
+                    LSR.W   #8, D1
+                    LSR.W   #5, D1
+                    LSL.W   #5, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.B  #1, D2
+                    LSL.B   #5, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Opmode
+                    MOVE.W  (A2), D0
+                    LSL.W   #7, D0
+                    LSR.W   #8, D0
+                    LSR.W   #5, D0
+                    
+                    CMPI.B  #7, D0
+                    BEQ     PROCESS_CMP_OC_AN
+                    
+                    CMPI.B  #3, D0
+                    BEQ     PROCESS_CMP_OC_AN
+                    BLT     PROCESS_CMP_OC_DN
+                    BRA     INVALID_OC
+
+PROCESS_CMP_OC_DN   MOVE.L  D0, D3
+                    ADDI.B  #1, D3
+                    LSL.B   #3, D3
+                    OR.B    D3, D1
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_CMP_OC_AN   JSR     SET_CMP_OC_SIZE
+
+                    MOVE.L  D0, D3
+                    ADDI.B  #1, D3
+                    LSL.B   #3, D3
+                    OR.B    D3, D1
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+SET_CMP_OC_SIZE     CMPI.B  #3, D0
+                    BEQ     SET_CMP_SIZE_WORD
+                    
+                    CMPI.B  #7, D0
+                    BEQ     SET_CMP_SIZE_LONG
+                    
+                    BRA     INVALID_OC
+
+SET_CMP_SIZE_WORD   MOVE.B  #1, D0
+                    RTS
+
+SET_CMP_SIZE_LONG   MOVE.B  #2, D0
+                    RTS
+
+*----------------------------------------------------
+* CMPI
+*----------------------------------------------------
+CHECK_CMPI_OC       MOVE.W  (A2), D0
+                    AND.W   #CMPI_OC, D0
+                    CMP.W   #CMPI_OC, D0
+                    BEQ     PROCESS_CMPI_OC
+                    RTS
+
+PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    
+                    MOVE.W  D0, D1
+                    ADDI.W  #1, D1
+                    LSL.W   #3, D1
+                    MOVE.W  D1, D2
+                    
+                    * Source Mode
+                    MOVE.B  #7, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.B  #4, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
                     
                     BRA     PROCESSED_OC
 
 *----------------------------------------------------
 * MOVE
 *----------------------------------------------------
-CHECK_MOVE_OC       MOVE.W  (A3), D0                ; Create a copy of the current instruction.
-                    AND.W   #MOVE_OC_MASK, D0       ; Apply the MOVE bit mask.
+CHECK_MOVE_OC       MOVE.W  (A2), D0                ; Create a copy of the current instruction.
+                    AND.W   #MOVE_OC, D0            ; Apply the MOVE bit mask.
                     CMP.W   #MOVE_OC, D0            ; Check if the result of the bit mask application is a MOVE instruction.
-                    BEQ.W   PROCESS_MOVE_OC         ; Branch and process if it is.
+                    BEQ     PROCESS_MOVE_OC         ; Branch and process if it is.
                     RTS                             ; Return since the instruction is not MOVE.
 
 PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from the stack.
                     CLR     D0                      ; Clear D0 for processing.
                     CLR     D1                      ; Clear D1 for processing.
                     CLR     D2                      ; Clear D2 for processing.
+                    CLR     D3                      ; Clear D3 for processing.
                     
                     * Size
-                    MOVE.W  (A3), D0                ; Create a copy of the current instruction.
+                    MOVE.W  (A2), D0                ; Create a copy of the current instruction.
                     LSL.W   #2, D0                  ; Shift left 2 bits.
                     LSR.W   #8, D0                  ; Shift right 8 bits.
                     LSR.W   #6, D0                  ; Shift right 6 bits.
-                    LSL.W   #3, D0                  ; Shift left 3 bits. Size now isolated in the form 000SS000.
-                    MOVE.B  D0, D1                  ; Copy the size to D1 for the source EA.
                     
-                    * Destination Register
-                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
-                    LSL.W   #4, D2                  ; Shift left 4 bits.
-                    LSR.W   #8, D2                  ; Shift right 8 bits.
-                    LSR.W   #5, D2                  ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
-                    OR.B    D2, D0                  ; OR the register with the size in D0.
-                                                    ; Result: 000SSRRR.
-                    * Destination Mode
-                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
-                    LSL.W   #7, D2                  ; Shift left 7 bits.
-                    LSR.W   #8, D2                  ; Shift right 8 bits.
-                    LSR.W   #5, D2                  ; Shift right 5 bits.
-                    LSL.W   #5, D2                  ; Shift left 5 bits. Destination mode now isolated in the form MMM00000.
-                    OR.B    D2, D0                  ; OR the mode with the size and register in D0.
-                                                    ; Result: MMMSSRRR. Destination EA packed byte complete.
+                    JSR     SET_MOVE_OC_SIZE
+                    
+                    MOVE.W  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.W   #3, D1                  ; Shift left 3 bits. Size now isolated in the form 000SS000.
+                    MOVE.W  D1, D2                  ; 
+                    
                     * Source Mode
-                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
-                    LSL.W   #8, D2                  ; Shift left 8 bits.
-                    LSL.W   #2, D2                  ; Shift left 2 bits.
-                    LSR.W   #8, D2                  ; Shift right 8 bits.
-                    LSR.W   #5, D2                  ; Shift right 5 bits.
-                    LSL.W   #5, D2                  ; Shift left 5 bits. Source mode now isolated in the form MMM00000.
-                    OR.B    D2, D1                  ; OR the mode with the size in D1.
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #8, D3                ; Shift left 8 bits.
+                    LSL.W   #2, D3                  ; Shift left 2 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits.
+                    LSL.W   #5, D3                  ; Shift left 5 bits. Source mode now isolated in the form MMM00000.
+                    OR.B    D3, D1                  ; OR the mode with the size in D1.
                                                     ; Result: MMMSS000.
                     * Source Register
-                    MOVE.W  (A3), D2                ; Create a copy of the current instruction.
-                    LSL.W   #8, D2                  ; Shift left 8 bits.
-                    LSL.W   #5, D2                  ; Shift left 5 bits.
-                    LSR.W   #8, D2                  ; Shift right 8 bits.
-                    LSR.W   #5, D2                  ; Shift right 5 bits. Source register now isolated in the form 00000RRR.
-                    OR.B    D2, D1                  ; OR the register with the size and mode in D1.
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #8, D3                  ; Shift left 8 bits.
+                    LSL.W   #5, D3                  ; Shift left 5 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits. Source register now isolated in the form 00000RRR.
+                    OR.B    D3, D1                  ; OR the register with the size and mode in D1.
                                                     ; Result: MMMSSRRR. Source EA packed byte complete.
 
-                    MOVE.L  #TBL_MASK_MOVE_DST, D2  ; Move the destination EA mask to D2.
-                    MOVE.L  #TBL_MASK_MOVE_SRC, D3  ; Move the source EA mask to D3.
+                    * Destination Mode
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #7, D3                  ; Shift left 7 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits.
+                    LSL.W   #5, D3                  ; Shift left 5 bits. Destination mode now isolated in the form MMM00000.
+                    OR.B    D3, D2                  ; OR the mode with the size and register in D0.
+                                                    ; Result: MMMSSRRR. Destination EA packed byte complete.
 
-                    BRA     PROCESSED_OC        ; We are done processing.
+                    * Destination Register
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #4, D3                  ; Shift left 4 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
+                    OR.B    D3, D2                  ; OR the register with the size in D0.
+                                                    ; Result: 000SSRRR.
 
-INVALID_OC          RTS
+                    BRA     PROCESSED_OC            ; We are done processing.
+
+SET_MOVE_OC_SIZE    CMPI.B  #1, D0
+                    BEQ     SET_MOVE_SIZE_BYTE
+                    
+                    CMPI.B  #3, D0
+                    BEQ     SET_MOVE_SIZE_WORD
+                    
+                    CMPI.B  #2, D0
+                    BEQ     SET_MOVE_SIZE_LONG
+                    
+                    BRA     INVALID_OC
+
+SET_MOVE_SIZE_BYTE  MOVE.B  #0, D0
+                    RTS
+
+SET_MOVE_SIZE_WORD  MOVE.B  #1, D0
+                    RTS
+
+SET_MOVE_SIZE_LONG  MOVE.B  #2, D0
+                    RTS
                     
 * =============================================================================
 * GET_SOURCE_EA
@@ -679,6 +998,8 @@ TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24   				;MOVE.W $3546, $1
 TEST_MOVE_2         DC.B    $32, $00                                    ;MOVE.W D0, D1
 
                     END		START
+
+
 
 
 
