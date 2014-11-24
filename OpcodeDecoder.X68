@@ -23,7 +23,6 @@ MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
 ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
 RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
-SUBI_INSTR          EQU     $0446002D           ; SUBI.W #45, D6
 INVALID_INSTR       EQU     $FFFF
 
 ADD_OC              EQU     $D000
@@ -174,8 +173,6 @@ PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_JSR_OC
                     JSR     CHECK_LEA_OC
                     JSR     CHECK_RTS_OC
-                    JSR     CHECK_SUB_OC
-                    JSR     CHECK_SUBI_OC
                     JSR     CHECK_ORI_OC
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
@@ -1703,7 +1700,8 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                     BNE GET_EA_MODE_7_0     		;If it isn't, continue to the next one
                     
                     ; Byte size data
-                    MOVE.B (A4), -(SP)          	;Grab the byte size data
+                    MOVE.W (A4), D2          		;Grab the byte size data
+					MOVE.B D2, -(SP)				;Push the byte data to the stack
                     MOVE.B #2, D1               	;This is the returnSize (eaType + 1 byte data)
                     
                     BRA GET_EA_MODE_7_END     		;Skip to the end
@@ -1771,11 +1769,19 @@ GET_EA_OVERFLOW 	MOVE.B #ERR_STACK_OVERFLOW, -(SP)   ;Load the error constant
 ;==================== String Literals =========================================
 
 ;=================== Test Data ================================================
-TEST_MOVE           DC.B    $33, $FC, $FD, $B9, $13, $24, $35, $46 		;MOVE.W #$FDB9, $13243546
-TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24   				;MOVE.W $3546, $1324
-TEST_MOVE_2         DC.B    $32, $00                                    ;MOVE.W D0, D1
+TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
+TEST_MOVE_1         DC.W    %0011001010001110           ;MOVE.W A6, (A1)
+TEST_MOVE_2         DC.W    %0010001011010101           ;MOVE.L (A5), (A1)+
+TEST_MOVE_3         DC.W    %0001001100011100           ;MOVE.B (A4)+, -(A1)
+TEST_MOVE_4         DC.W    %0011001000100011           ;MOVE.W -(A3), D1
+TEST_MOVE_5         DC.W    %0011000111111000, $A000, $4444 ;MOVE.W $A000, $4444
+TEST_MOVE_6         DC.W    %0010000111111001, $1234, $FEDC, $8888  ;MOVE.L $1234FEDC, $8888
+TEST_MOVE_7         DC.W    %0001001111111100, $0070, $FEFE, $FEFE  ;MOVE.B #$77, $FEFEFEFE
+TEST_MOVE_8         DC.W    %0011001111111000, $E7E7, $8181, $8181  ;MOVE.W #$E7E7, $81818181
+TEST_MOVE_9         DC.W    %0010001111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #12FF12FF, $90909090
 
                     END		START
+
 
 
 
