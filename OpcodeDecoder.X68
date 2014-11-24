@@ -16,7 +16,6 @@ EORI_INSTR          EQU     $0A410007           ; EORI.W #7, D1
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
-SUBI_INSTR          EQU     $0446002D           ; SUBI.W #45, D6
 INVALID_INSTR       EQU     $FFFF
 
 ADD_OC              EQU     $D000
@@ -131,7 +130,10 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    MOVE.L  #SUBI_INSTR, START_ADDRESS
+                    MOVE.B #$77, D0
+                    MOVE.B #$80, D0
+
+                    MOVE.L  #MULS_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -152,9 +154,8 @@ PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_CMPI_OC
                     JSR     CHECK_DIVS_OC
                     JSR     CHECK_EORI_OC
-                    JSR     CHECK_SUB_OC
-                    JSR     CHECK_SUBI_OC
                     JSR     CHECK_MOVE_OC
+                    JSR     CHECK_SUB_OC
                     BRA     INVALID_OC
 
 PROCESSED_OC        MOVE.L  (SP)+, D7
@@ -1041,59 +1042,6 @@ PROCESS_SUB_OC_DST  SUBI.B  #4, D0
                     OR.B    D3, D2
                     
                     BRA     PROCESSED_OC
-
-*--------------------------------------------------
-* SUBI
-*--------------------------------------------------
-CHECK_SUBI_OC       MOVE.W  (A2), D0
-                    AND.W   #SUBI_OC_MASK, D0
-                    CMP.W   #SUBI_OC, D0
-                    BEQ     PROCESS_SUBI_OC
-                    RTS
-
-PROCESS_SUBI_OC     MOVE.L  (SP)+, D0
-                    CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
-                    
-                    * Size
-                    MOVE.W  (A2), D0
-                    LSL.W   #8, D0
-                    LSR.W   #8, D0
-                    LSR.W   #6, D0
-                    MOVE.B  D0, D1
-                    ADDI.B  #1, D1
-                    LSL.B   #3, D1
-                    MOVE.B  D1, D2
-                    
-                    * Source Mode
-                    MOVE.B  #7, D3
-                    LSL.B   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Source Register
-                    MOVE.B  #4, D3
-                    OR.B    D3, D1
-                    
-                    * Destination Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    BRA     PROCESSED_OC
                     
 * =============================================================================
 * GET_SOURCE_EA
@@ -1510,7 +1458,8 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                     BNE GET_EA_MODE_7_0     		;If it isn't, continue to the next one
                     
                     ; Byte size data
-                    MOVE.B (A4), -(SP)          	;Grab the byte size data
+                    MOVE.W (A4), D2          		;Grab the byte size data
+					MOVE.B D2, -(SP)				;Push the byte data to the stack
                     MOVE.B #2, D1               	;This is the returnSize (eaType + 1 byte data)
                     
                     BRA GET_EA_MODE_7_END     		;Skip to the end
@@ -1578,11 +1527,19 @@ GET_EA_OVERFLOW 	MOVE.B #ERR_STACK_OVERFLOW, -(SP)   ;Load the error constant
 ;==================== String Literals =========================================
 
 ;=================== Test Data ================================================
-TEST_MOVE           DC.B    $33, $FC, $FD, $B9, $13, $24, $35, $46 		;MOVE.W #$FDB9, $13243546
-TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24   				;MOVE.W $3546, $1324
-TEST_MOVE_2         DC.B    $32, $00                                    ;MOVE.W D0, D1
+TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
+TEST_MOVE_1         DC.W    %0011001010001110           ;MOVE.W A6, (A1)
+TEST_MOVE_2         DC.W    %0010001011010101           ;MOVE.L (A5), (A1)+
+TEST_MOVE_3         DC.W    %0001001100011100           ;MOVE.B (A4)+, -(A1)
+TEST_MOVE_4         DC.W    %0011001000100011           ;MOVE.W -(A3), D1
+TEST_MOVE_5         DC.W    %0011000111111000, $A000, $4444 ;MOVE.W $A000, $4444
+TEST_MOVE_6         DC.W    %0010000111111001, $1234, $FEDC, $8888  ;MOVE.L $1234FEDC, $8888
+TEST_MOVE_7         DC.W    %0001001111111100, $0070, $FEFE, $FEFE  ;MOVE.B #$77, $FEFEFEFE
+TEST_MOVE_8         DC.W    %0011001111111000, $E7E7, $8181, $8181  ;MOVE.W #$E7E7, $81818181
+TEST_MOVE_9         DC.W    %0010001111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #12FF12FF, $90909090
 
                     END		START
+
 
 
 
