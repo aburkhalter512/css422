@@ -3,6 +3,9 @@ START               ORG		$1000
 START_ADDRESS       EQU     $4000
 STR_STACK           EQU     $8000
 
+*----------------------------------------
+* Opcode Decoder Test Instructions
+*----------------------------------------
 ADD_INSTR           EQU     $D2385000           ; ADD.B $5000, D1
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
 ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
@@ -13,6 +16,8 @@ CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
 DIVS_INSTR          EQU     $89C0               ; DIVS.W D0, D4
 EOR_INSTR           EQU     $B5786000           ; EOR.W D2, $6000
 EORI_INSTR          EQU     $0A410007           ; EORI.W #7, D1
+JSR_INSTR           EQU     $4EB90000           ; JSR $0000101A (NOTE: The instruction is not complete. Should be 6 bytes, not 4!)
+LEA_INSTR           EQU     $4BF85000           ; LEA $5000, A5
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
 ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
@@ -40,6 +45,12 @@ DIVS_OC_MASK        EQU     $F1C0
 
 EORI_OC             EQU     $0A00
 EORI_OC_MASK        EQU     $FF00
+
+JSR_OC              EQU     $4E80
+JSR_OC_MASK         EQU     $FF80
+
+LEA_OC              EQU     $41C0
+LEA_OC_MASK         EQU     $F1C0
 
 MOVE_OC             EQU     $0000
 MOVE_OC_MASK        EQU     $C000
@@ -155,10 +166,6 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
                     MOVE.B D0, -(SP)
                     JSR GET_SOURCE_EA
 
-                    MOVE.L  #ORI_INSTR, START_ADDRESS
-                    MOVE.B #$80, D0
-
-                    MOVE.L  #MULS_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -179,10 +186,11 @@ PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_CMPI_OC
                     JSR     CHECK_DIVS_OC
                     JSR     CHECK_EORI_OC
+                    JSR     CHECK_JSR_OC
+                    JSR     CHECK_LEA_OC
                     JSR     CHECK_RTS_OC
                     JSR     CHECK_ORI_OC
                     JSR     CHECK_MOVE_OC
-                    JSR     CHECK_SUB_OC
                     BRA     INVALID_OC
 
 PROCESSED_OC        MOVE.L  (SP)+, D7
@@ -789,6 +797,106 @@ PROCESS_EORI_OC     MOVE.L  (SP)+, D0
                     BRA     PROCESSED_OC
 
 *----------------------------------------------------
+* JSR
+*----------------------------------------------------
+CHECK_JSR_OC        MOVE.W  (A2), D0
+                    AND.W   #JSR_OC_MASK, D0
+                    CMP.W   #JSR_OC, D0
+                    BEQ     PROCESS_JSR_OC
+                    RTS
+
+PROCESS_JSR_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.B  #2, D0
+                    MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    * There is no source mode for JSR.
+                    
+                    * Source Register
+                    * There is no source register for JSR.
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*----------------------------------------------------
+* LEA
+*----------------------------------------------------
+CHECK_LEA_OC        MOVE.W  (A2), D0
+                    AND.W   #LEA_OC_MASK, D0
+                    CMP.W   #LEA_OC, D0
+                    BEQ     PROCESS_LEA_OC
+                    RTS
+
+PROCESS_LEA_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.B  #2, D0
+                    MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.B  #1, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*----------------------------------------------------
 * MOVE
 *----------------------------------------------------
 CHECK_MOVE_OC       MOVE.W  (A2), D0                ; Create a copy of the current instruction.
@@ -1136,6 +1244,59 @@ PROCESS_SUB_OC_DST  SUBI.B  #4, D0
                     LSR.W   #8, D3
                     LSR.W   #5, D3
                     LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*--------------------------------------------------
+* SUBI
+*--------------------------------------------------
+CHECK_SUBI_OC       MOVE.W  (A2), D0
+                    AND.W   #SUBI_OC_MASK, D0
+                    CMP.W   #SUBI_OC, D0
+                    BEQ     PROCESS_SUBI_OC
+                    RTS
+
+PROCESS_SUBI_OC     MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.B  #7, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.B  #4, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
                     OR.B    D3, D2
                     
                     BRA     PROCESSED_OC
