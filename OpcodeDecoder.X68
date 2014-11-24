@@ -10,6 +10,8 @@ ADD_INSTR           EQU     $D2385000           ; ADD.B $5000, D1
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
 ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
 AND_INSTR           EQU     $C63C0055           ; AND.W #%01010101, D3
+BTST_DN_B_INSTR     EQU     $0D384356           ; BTST.B D6, $4356
+BTST_DN_L_INSTR     EQU     $0507               ; BTST.L D2, D7
 CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
 CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
 CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
@@ -33,6 +35,12 @@ ADDQ_OC_MASK        EQU     $F100
 
 AND_OC              EQU     $C000
 AND_OC_MASK         EQU     $F000
+
+BTST_DN_OC          EQU     $0100
+BTST_DN_OC_MASK     EQU     $F1C0
+
+BTST_DATA_OC        EQU     $0800
+BTST_DATA_OC_MASK   EQU     $FFC0
 
 CMP_EOR_OC          EQU     $B000
 CMP_EOR_OC_MASK     EQU     $F000
@@ -149,23 +157,24 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    LEA     TEST_MOVE_0, A1
-                    MOVE.W (A1), D0
+*                    LEA     TEST_MOVE_0, A1
+*                    MOVE.W (A1), D0
+*                    
+*                    MOVE.W D0, D1
+*                    ANDI.B #%00000111, D1
+*                    
+*                    ANDI.B #%00111000, D0
+*                    LSL.B #2, D0
+*                    
+*                    ORI.B #%00001000, D0
+*
+*                    OR.B D1, D0
+*                    
+*                    MOVE.B TBL_MASK_MOVE_SRC, -(SP)
+*                    MOVE.B D0, -(SP)
+*                    JSR GET_SOURCE_EA
                     
-                    MOVE.W D0, D1
-                    ANDI.B #%00000111, D1
-                    
-                    ANDI.B #%00111000, D0
-                    LSL.B #2, D0
-                    
-                    ORI.B #%00001000, D0
-
-                    OR.B D1, D0
-                    
-                    MOVE.B TBL_MASK_MOVE_SRC, -(SP)
-                    MOVE.B D0, -(SP)
-                    JSR GET_SOURCE_EA
-
+                    MOVE.W  #BTST_DN_L_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -180,6 +189,7 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
+                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -485,6 +495,86 @@ PROCESS_AND_OC_DST  SUBI.B  #4, D0
                     LSR.W   #8, D3
                     LSR.W   #5, D3
                     OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*--------------------------------------------------
+* BTST
+*--------------------------------------------------
+CHECK_BTST_OC       MOVE.W  (A2), D0
+                    AND.W   #BTST_DN_OC_MASK, D0
+                    CMP.W   #BTST_DN_OC, D0
+                    BEQ     PROCESS_BTST_DN_OC
+                    
+                    MOVE.W  (A2), D0
+                    AND.W   #BTST_DATA_OC_MASK, D0
+                    CMP.W   #BTST_DATA_OC, D0
+                    BEQ     PROCESS_BTST_DA_OC
+                    
+                    RTS
+
+PROCESS_BTST_DN_OC  MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+                    
+                    * Source Register
+                    MOVE.W  (A2), D1
+                    LSL.W   #4, D1
+                    LSR.W   #8, D1
+                    LSR.W   #5, D1
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D2
+                    LSL.W   #8, D2
+                    LSL.W   #2, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    LSL.W   #5, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  D2, D3
+                    LSR.B   #5, D3
+                    CMP.B   #0, D3
+                    BEQ     PROCESS_BTST_DN_L
+                    BRA     PROCESS_BTST_DN_B
+
+PROCESS_BTST_DN_B   * Size
+                    MOVE.B  #0, D0
+                    MOVE.B  D0, D3
+                    ADDI.B  #1, D3
+                    LSL.B   #3, D3
+                    OR.B    D3, D1
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_BTST_DN_L   * Size
+                    MOVE.B  #2, D0
+                    MOVE.B  D0, D3
+                    ADDI.B  #1, D3
+                    LSL.B   #3, D3
+                    OR.B    D3, D1
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_BTST_DA_OC  MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
                     
                     BRA     PROCESSED_OC
 
@@ -1797,6 +1887,7 @@ TEST_MOVE_8         DC.W    %0011001111111000, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010001111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #12FF12FF, $90909090
 
                     END		START
+
 
 
 
