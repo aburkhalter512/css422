@@ -1379,7 +1379,7 @@ GET_EA_MODE_5   	CMPI.B #EA_MODE_W_ADDR, D0   	;Is the mode Absolute Word Addres
                     MOVE.B D3, D5               	;Copy the Table Mask
                     ANDI.B #TBL_MASK_W_ADDR, D5  	;Lets mask out the (xxx).W bit
                     CMPI.B #TBL_MASK_W_ADDR, D5  	;Is the (xxx).W bit active?
-                    BNE GET_SRC_EA_BAD_MODE      	;If it isn't, try (xxx).L mode
+                    BNE GET_EA_BAD_MODE      	    ;If it isn't, try (xxx).L mode
                     
                     ; Register Error Checking
                     CMPI.B #EA_W_REG, D1         	;Make sure the mode is %000
@@ -1409,7 +1409,7 @@ GET_EA_MODE_6   	CMPI.B #EA_MODE_L_ADDR, D0   	;Is the mode Absolute Long Addres
                     MOVE.B D3, D5               	;Copy the Table Mask
                     ANDI.B #TBL_MASK_L_ADDR, D5  	;Lets mask out the (xxx).L bit
                     CMPI.B #TBL_MASK_L_ADDR, D5  	;Is the (xxx).L bit active?
-                    BNE GET_SRC_EA_BAD_MODE      	;If it isn't, try (xxx).L mode
+                    BNE GET_EA_BAD_MODE      	    ;If it isn't, try (xxx).L mode
                     
                     ; Register Error Checking
                     CMPI.B #EA_L_REG, D1         	;Make sure the mode is %001
@@ -1443,7 +1443,7 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                                         
                     ; Register Error Checking
                     CMPI.B #EA_DATA_REG, D1         ;Make sure the mode is %100
-                    BNE GET_SRC_EA_BAD_REG      	;If it is not, send to error handling
+                    BNE GET_EA_BAD_REG      	    ;If it is not, send to error handling
                     
                     ; Error checking done
                     
@@ -1528,6 +1528,7 @@ TEST_MOVE_1         DC.B    $13, $F9, $35, $46, $13, $24   				;MOVE.W $3546, $1
 TEST_MOVE_2         DC.B    $32, $00                                    ;MOVE.W D0, D1
 
                     END		START
+
 
 
 
