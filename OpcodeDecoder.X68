@@ -15,6 +15,8 @@ EOR_INSTR           EQU     $B5786000           ; EOR.W D2, $6000
 EORI_INSTR          EQU     $0A410007           ; EORI.W #7, D1
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
+ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
+RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
 SUBI_INSTR          EQU     $0446002D           ; SUBI.W #45, D6
 INVALID_INSTR       EQU     $FFFF
@@ -45,6 +47,12 @@ MOVE_OC_MASK        EQU     $C000
 
 MULS_OC             EQU     $C1C0
 MULS_OC_MASK        EQU     $F1C0
+
+ORI_OC              EQU     $0000
+ORI_OC_MASK         EQU     $FF00
+
+RTS_OC              EQU     $4E75
+RTS_OC_MASK         EQU     $FFFF
 
 SUB_OC              EQU     $9000
 SUB_OC_MASK         EQU     $F000
@@ -131,7 +139,7 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    MOVE.L  #SUBI_INSTR, START_ADDRESS
+                    MOVE.L  #ORI_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -152,8 +160,10 @@ PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_CMPI_OC
                     JSR     CHECK_DIVS_OC
                     JSR     CHECK_EORI_OC
+                    JSR     CHECK_RTS_OC
                     JSR     CHECK_SUB_OC
                     JSR     CHECK_SUBI_OC
+                    JSR     CHECK_ORI_OC
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
@@ -893,6 +903,76 @@ PROCESS_MULS_OC     MOVE.L  (SP)+, D0
                     LSR.W   #8, D3
                     LSR.W   #5, D3
                     OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*--------------------------------------------------
+* ORI
+*--------------------------------------------------
+CHECK_ORI_OC        MOVE.W  (A2), D0
+                    AND.W   #ORI_OC_MASK, D0
+                    CMP.W   #ORI_OC, D0
+                    BEQ     PROCESS_ORI_OC
+                    RTS
+
+PROCESS_ORI_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.B  #7, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.B  #4, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*--------------------------------------------------
+* RTS
+*--------------------------------------------------
+CHECK_RTS_OC        MOVE.W  (A2), D0
+                    AND.W   #RTS_OC_MASK, D0
+                    CMP.W   #RTS_OC, D0
+                    BEQ     PROCESS_RTS_OC
+                    RTS
+
+PROCESS_RTS_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
                     
                     BRA     PROCESSED_OC
                     
