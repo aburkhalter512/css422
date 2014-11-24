@@ -24,6 +24,7 @@ LEA_INSTR           EQU     $4BF85000           ; LEA $5000, A5
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
 NEG_INSTR           EQU     $4406               ; NEG.B D6
+NOT_INSTR           EQU     $46782134           ; NOT.W $2134
 ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
 RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
@@ -70,6 +71,9 @@ MULS_OC_MASK        EQU     $F1C0
 
 NEG_OC              EQU     $4400
 NEG_OC_MASK         EQU     $FF00
+
+NOT_OC              EQU     $4600
+NOT_OC_MASK         EQU     $FF00
 
 ORI_OC              EQU     $0000
 ORI_OC_MASK         EQU     $FF00
@@ -179,7 +183,7 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 *                    MOVE.B D0, -(SP)
 *                    JSR GET_SOURCE_EA
                     
-                    MOVE.W  #NEG_INSTR, START_ADDRESS
+                    MOVE.L  #NOT_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -204,6 +208,7 @@ PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_JSR_OC
                     JSR     CHECK_LEA_OC
                     JSR     CHECK_NEG_OC
+                    JSR     CHECK_NOT_OC
                     JSR     CHECK_RTS_OC
                     JSR     CHECK_ORI_OC
                     JSR     CHECK_MOVE_OC
@@ -1187,10 +1192,60 @@ PROCESS_NEG_OC      MOVE.L  (SP)+, D0
                     MOVE.B  D1, D2
                     
                     * Source Mode
-                    * There is no source.
+                    * There is no source operand.
                     
                     * Source Register
-                    * There is no source.
+                    * There is no source operand.
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*----------------------------------------------------
+* NOT
+*----------------------------------------------------
+CHECK_NOT_OC        MOVE.W  (A2), D0
+                    AND.W   #NOT_OC_MASK, D0
+                    CMP.W   #NOT_OC, D0
+                    BEQ     PROCESS_NOT_OC
+                    RTS
+
+PROCESS_NOT_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    * There is no source operand.
+                    
+                    * Source Register
+                    * There is no source operand.
                     
                     * Destination Mode
                     MOVE.W  (A2), D3
@@ -1976,6 +2031,7 @@ TEST_MOVE_8         DC.W    %0011001111111000, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010001111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #12FF12FF, $90909090
 
                     END		START
+
 
 
 
