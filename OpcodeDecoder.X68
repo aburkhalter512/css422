@@ -149,22 +149,25 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    LEA     TEST_MOVE_0, A1
-                    MOVE.W (A1), D0
+                    LEA     TEST_MOVE_9, A2
+                    MOVE.W (A2), D0
                     
+                    LSR.W #6, D0
                     MOVE.W D0, D1
-                    ANDI.B #%00000111, D1
+                    ANDI.B #%00000111, D0
+                    LSL.B #5, D0
                     
-                    ANDI.B #%00111000, D0
-                    LSL.B #2, D0
+                    ANDI.B #%00111000, D1
+                    LSR.B #3, D1
                     
                     ORI.B #%00001000, D0
 
                     OR.B D1, D0
                     
-                    MOVE.B TBL_MASK_MOVE_SRC, -(SP)
+                    MOVE.B #4, -(SP)
+                    MOVE.B #TBL_MASK_MOVE_DST, -(SP)
                     MOVE.B D0, -(SP)
-                    JSR GET_SOURCE_EA
+                    JSR GET_DESTINATION_EA
 
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -1487,9 +1490,9 @@ GET_DESTINATION_EA	JMP __GET_EA					;No JSR because the rts value is already on 
 ; NOT INTENDED TO BE CALLED. CALL THE WRAPPER METHODS INSTEAD!!!!!!!!!!!!!!!!!
 ; +returnSize: byte, ea: byte, data: 0-4 bytes __GET_EA(eaType: byte, tableMask: byte, dataOffset: byte)
 __GET_EA 			MOVEA.L (SP)+, A6				;Save a refernce to the stack pointer
-					MOVE.B (SP)+, D4				;Get the data offset
-					MOVE.B (SP)+, D3				;Get the tableMask
 					MOVE.B (SP)+, D0				;Get the eaType
+					MOVE.B (SP)+, D3				;Get the tableMask
+					MOVE.B (SP)+, D4				;Get the data offset
 					
 					; Test for a valid size
 					MOVE.B D0, D2
@@ -1583,7 +1586,7 @@ GET_EA_MODE_2   	CMP.B #EA_MODE_IND_ADDR, D0   	;Is the mode Indirect Address Re
                     BRA GET_EA_RETURN       		;We can return our values now
 					
 ; ================== Post-Increment Address Register Mode ======================              
-GET_EA_MODE_3   	CMP.B #EA_MODE_IND_ADDR, D0   	;Is the mode Post-Increment Address Registers?
+GET_EA_MODE_3   	CMP.B #EA_MODE_INC_ADDR, D0   	;Is the mode Post-Increment Address Registers?
                     BNE GET_EA_MODE_4   			;If it isn't, skip to the next check
                     
 					; Table Mask Error Checking
@@ -1596,7 +1599,7 @@ GET_EA_MODE_3   	CMP.B #EA_MODE_IND_ADDR, D0   	;Is the mode Post-Increment Addr
                     
                     ; Address Register Processing
                     ORI.B #%00001000, D1         	;The 4th bit specifies that its an address reg
-					LSL.B #4, D1					;Move the address register value to the correct position
+					LSL.B #3, D1					;Move the address register value to the correct position
                     
                     ; Suffix processing
                     OR.B #EA_SUFFIX_INC, D1         ;Add the suffix to the ea builder
@@ -1698,8 +1701,8 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                     
                     ; Table Mask Error Checking
                     MOVE.B D3, D5               	;Copy the Table Mask
-                    ANDI.B #TBL_MASK_L_ADDR, D5  	;Lets mask out the #<data> bit
-                    CMPI.B #TBL_MASK_L_ADDR, D5  	;Is the #<data> bit active?
+                    ANDI.B #TBL_MASK_DATA, D5  	    ;Lets mask out the #<data> bit
+                    CMPI.B #TBL_MASK_DATA, D5  	    ;Is the #<data> bit active?
                     BNE GET_EA_BAD_MODE      		;If it isn't, we have a bad mode on our hands
                                         
                     ; Register Error Checking
@@ -1712,17 +1715,16 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                     MOVEA.L A2, A4              	;Load a working copy of the current line
                     ADDA.L #2, A4               	;Move the pointer to the data
                     
-                    CMPI.B #%00000001, D4        	;Is this byte size data?
+                    CMPI.B #%00000001, D2        	;Is this byte size data?
                     BNE GET_EA_MODE_7_0     		;If it isn't, continue to the next one
                     
                     ; Byte size data
-                    MOVE.W (A4), D2          		;Grab the byte size data
-					MOVE.B D2, -(SP)				;Push the byte data to the stack
-                    MOVE.B #2, D1               	;This is the returnSize (eaType + 1 byte data)
+                    MOVE.W (A4), -(SP)				;Push the byte data to the stack
+                    MOVE.B #3, D1               	;This is the returnSize (eaType + 1 byte data)
                     
                     BRA GET_EA_MODE_7_END     		;Skip to the end
                     
-GET_EA_MODE_7_0 	CMPI.B #%00000010, D4        	;Is this word size data?
+GET_EA_MODE_7_0 	CMPI.B #%00000010, D2        	;Is this word size data?
                     BNE GET_EA_MODE_7_1     		;If it isn't, continue to the next one
                                         
                     ; Word size data
@@ -1793,10 +1795,11 @@ TEST_MOVE_4         DC.W    %0011001000100011           ;MOVE.W -(A3), D1
 TEST_MOVE_5         DC.W    %0011000111111000, $A000, $4444 ;MOVE.W $A000, $4444
 TEST_MOVE_6         DC.W    %0010000111111001, $1234, $FEDC, $8888  ;MOVE.L $1234FEDC, $8888
 TEST_MOVE_7         DC.W    %0001001111111100, $0070, $FEFE, $FEFE  ;MOVE.B #$77, $FEFEFEFE
-TEST_MOVE_8         DC.W    %0011001111111000, $E7E7, $8181, $8181  ;MOVE.W #$E7E7, $81818181
-TEST_MOVE_9         DC.W    %0010001111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #12FF12FF, $90909090
+TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7E7, $81818181
+TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
