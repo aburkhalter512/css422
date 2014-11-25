@@ -149,26 +149,6 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    LEA     TEST_MOVE_9, A2
-                    MOVE.W (A2), D0
-                    
-                    LSR.W #6, D0
-                    MOVE.W D0, D1
-                    ANDI.B #%00000111, D0
-                    LSL.B #5, D0
-                    
-                    ANDI.B #%00111000, D1
-                    LSR.B #3, D1
-                    
-                    ORI.B #%00001000, D0
-
-                    OR.B D1, D0
-                    
-                    MOVE.B #4, -(SP)
-                    MOVE.B #TBL_MASK_MOVE_DST, -(SP)
-                    MOVE.B D0, -(SP)
-                    JSR GET_DESTINATION_EA
-
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
