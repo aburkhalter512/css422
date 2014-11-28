@@ -1,7 +1,6 @@
 START               ORG		$1000
 
 START_ADDRESS       EQU     $4000
-STR_STACK           EQU     $8000
 
 *----------------------------------------
 * Opcode Decoder Test Instructions
@@ -146,9 +145,13 @@ TBL_MASK_ADDQ_DST   EQU     %01111111 ;Allow all alterable addressing modes
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
 
+* JSR Mask
+TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
+
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
+                    MOVE.L  #JSR_INSTR, START_ADDRESS
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -158,10 +161,26 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
                     TRAP    #15
 
 *--------------------------------------------------
+* OC_ONE_EA
+*--------------------------------------------------
+* This subroutine assumes the following:
+*
+* 1. D0 contains the size of the operation.
+* 2. D1 contains the source bit packed byte.
+* 3. D2 contains the table mask.
+*--------------------------------------------------
+OC_ONE_EA           MOVE.B  D0, -(SP)
+                    MOVE.B  D1, -(SP)
+                    MOVE.B  D2, -(SP)
+                    
+                    JSR     GET_SOURCE_EA
+                    
+OC_ONE_EA_LOOP      
+
+*--------------------------------------------------
 * PROCESS_OC Subroutine
 *--------------------------------------------------       
-PROCESS_OC          MOVE.L  -(SP), D7
-                    JSR     CHECK_ADD_OC
+PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
@@ -176,11 +195,8 @@ PROCESS_OC          MOVE.L  -(SP), D7
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
-PROCESSED_OC        MOVE.L  (SP)+, D7
-                    RTS
-
-INVALID_OC          MOVE.L  (SP)+, D7
-                    RTS
+PROCESSED_OC        RTS
+INVALID_OC          RTS
 
 *--------------------------------------------------
 * ADD & ADDA
@@ -799,32 +815,33 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     MOVE.B  D0, D1
                     ADDI.B  #1, D1
                     LSL.B   #3, D1
-                    MOVE.B  D1, D2
                     
                     * Source Mode
-                    * There is no source mode for JSR.
-                    
-                    * Source Register
-                    * There is no source register for JSR.
-                    
-                    * Destination Mode
                     MOVE.W  (A2), D3
                     LSL.W   #8, D3
                     LSL.W   #2, D3
                     LSR.W   #8, D3
                     LSR.W   #5, D3
                     LSL.W   #5, D3
-                    OR.B    D3, D2
+                    OR.B    D3, D1
                     
-                    * Destination Register
+                    * Source Register
                     MOVE.W  (A2), D3
                     LSL.W   #8, D3
                     LSL.W   #5, D3
                     LSR.W   #8, D3
                     LSR.W   #5, D3
-                    OR.B    D3, D2
+                    OR.B    D3, D1
                     
-                    BRA     PROCESSED_OC
+                    * Destination Mode
+                    * There is no destination mode.
+                    
+                    * Destination Register
+                    * There is no destination register.
+                    
+                    MOVE.B  #TBL_MASK_JSR, D2
+                    
+                    BRA     OC_ONE_EA
 
 *----------------------------------------------------
 * LEA
@@ -941,6 +958,28 @@ PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from t
                     LSR.W   #5, D3                  ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
                     OR.B    D3, D2                  ; OR the register with the size in D0.
                                                     ; Result: 000SSRRR.
+
+                    MOVE.B  D0, -(SP)
+                    
+                    MOVE.B  #TBL_MASK_MOVE_SRC, -(SP)
+                    MOVE.B  D1, -(SP)
+                    
+                    JSR     GET_SOURCE_EA
+                    
+                    MOVE.B  (SP)+, D4
+                    MOVE.B  (SP)+, D5
+                    
+                    MOVE.B  (SP)+, D2
+                    MOVE.B  (SP)+, D1
+                    MOVE.B  (SP)+, D0
+                    
+                    MOVE.B  #TBL_MASK_MOVE_DST, -(SP)
+                    MOVE.B  D2, -(SP)
+                    
+                    JSR     GET_DESTINATION_EA
+                    
+                    MOVE.B  (SP)+, D4
+                    MOVE.B  (SP)+, D5
 
                     BRA     PROCESSED_OC            ; We are done processing.
 
@@ -1779,25 +1818,6 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *~Font name~Courier New~
 *~Font size~10~
