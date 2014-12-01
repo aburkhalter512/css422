@@ -34,6 +34,7 @@ OC_LONG_SIZE        EQU     $3
 
 ADD_OC              EQU     $D000
 ADD_OC_MASK         EQU     $F000
+ADD_OC_SS           EQU     $0C
 
 ADDQ_OC             EQU     $5000
 ADDQ_OC_MASK        EQU     $F100
@@ -142,6 +143,10 @@ TBL_MASK_W_ADDR     EQU     %00100000
 TBL_MASK_L_ADDR     EQU     %01000000
 TBL_MASK_DATA       EQU     %10000000
 
+* ADD Masks
+TBL_MASK_ADD_SRC    EQU     %11111111 ;Allow all
+TBL_MASK_ADD_DST    EQU     %01111101 ;
+
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
@@ -153,7 +158,8 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    MOVE.W  #MOVE_INSTR, (A6)
+                    MOVE.L  #ADD_INSTR, (A6)
+                    *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
@@ -454,8 +460,8 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     ADDI.B  #1, D0      ; Restore the original destination return size.
                     MOVE.B  D0, -(SP)   ; Put the destination return size back on the stack.
                     
-                    LSR.B   #8, D0      ; Remove the destination return size from the register.
-                    LSR.B   #8, D1      ; Remove the destination eaType from the register.
+                    LSR.W   #8, D0      ; Remove the destination return size from the register.
+                    LSR.W   #8, D1      ; Remove the destination eaType from the register.
                     
                     * Put the source information back on the stack.
                     MOVE.L  D2, D7
@@ -662,9 +668,12 @@ SET_ADDA_SIZE_WORD  MOVE.B  #1, D0
 SET_ADDA_SIZE_LONG  MOVE.B  #2, D0
                     RTS
 
-PROCESS_ADD_OC_SRC  MOVE.B  D0, D1
-                    ADDI.B  #1, D1
+PROCESS_ADD_OC_SRC  * Size
+                    MOVE.B  D0, D1
+                    ADDI.B  #1, D0
+                    MOVE.B  D0, D1
                     LSL.B   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Source Mode
                     MOVE.W  (A2), D3
@@ -687,12 +696,18 @@ PROCESS_ADD_OC_SRC  MOVE.B  D0, D1
                     * Not needed since mode is 000.
 
                     * Destination Register
-                    MOVE.W  (A2), D2
-                    LSL.W   #4, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_ADD_SRC, D3
+                    MOVE.B  #TBL_MASK_ADD_DST, D4
+                    MOVE.B  #ADD_OC_SS, D5
+                    MOVE.B  #0, D6
+
+                    BRA     OC_TWO_EA
 
 PROCESS_ADD_OC_DST  SUBI.B  #4, D0
                     MOVE.B  D0, D2
@@ -2186,6 +2201,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
