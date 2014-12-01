@@ -27,6 +27,11 @@ RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
 INVALID_INSTR       EQU     $FFFF
 
+OC_NO_SIZE          EQU     $0
+OC_BYTE_SIZE        EQU     $1
+OC_WORD_SIZE        EQU     $2
+OC_LONG_SIZE        EQU     $3
+
 ADD_OC              EQU     $D000
 ADD_OC_MASK         EQU     $F000
 
@@ -57,6 +62,7 @@ LEA_OC_MASK         EQU     $F1C0
 
 MOVE_OC             EQU     $0000
 MOVE_OC_MASK        EQU     $C000
+MOVE_OC_SS          EQU     $0A
 
 MULS_OC             EQU     $C1C0
 MULS_OC_MASK        EQU     $F1C0
@@ -66,6 +72,7 @@ ORI_OC_MASK         EQU     $FF00
 
 RTS_OC              EQU     $4E75
 RTS_OC_MASK         EQU     $FFFF
+RTS_OC_SS           EQU     $2C
 
 SUB_OC              EQU     $9000
 SUB_OC_MASK         EQU     $F000
@@ -135,16 +142,6 @@ TBL_MASK_W_ADDR     EQU     %00100000
 TBL_MASK_L_ADDR     EQU     %01000000
 TBL_MASK_DATA       EQU     %10000000
 
-* ADD Masks
-TBL_MASK_ADD_SRC    EQU     %11111111 ;Allow all
-TBL_MASK_ADD_DST    EQU     %01111100 ;Allow only memory alterable addressing modes
-
-* ADDA Masks
-TBL_MASK_ADDA_SRC   EQU     %11111111 ;Allow all
-
-* ADDQ Masks
-TBL_MASK_ADDQ_DST   EQU     %01111111 ;Allow all alterable addressing modes
-
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
@@ -155,9 +152,11 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    MOVEA.W  #START_ADDRESS, A6
-                    MOVE.W  #JSR_INSTR_OC, (A6)+
-                    MOVE.L  #JSR_INSTR_DATA, (A6)
+                    MOVEA.W #START_ADDRESS, A6
+                    MOVE.W  #MOVE_INSTR, (A6)
+                    *MOVE.W  #RTS_INSTR, (A6)
+                    *MOVE.W  #JSR_INSTR_OC, (A6)+
+                    *MOVE.L  #JSR_INSTR_DATA, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -167,9 +166,9 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
                     MOVE.B  #9, D0
                     TRAP    #15
 
-OC_ERROR_ONE_EA     
+OC_ERROR     
 
-CHECK_ERROR         MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
+OC_CHECK_ERROR      MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
                     MOVE.B  (SP)+, D0   ; Get the GET_x_EA return size from the stack.
                     MOVE.B  (SP)+, D1   ; Get the GET_x_EA eaType from the stack.
                     MOVE.B  D1, D2      ; Copy the eaType.
@@ -183,56 +182,93 @@ CHECK_ERROR         MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
                     MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
-OC_ONE_EA_XFS_BYTE  MOVE.L  (SP)+, A6
-                    MOVE.B  (SP)+, D2
+*--------------------------------------------------
+* OC_XFS_BYTE: Transfer from Stack (Byte Data)
+*--------------------------------------------------
+OC_XFS_BYTE         MOVE.L  (SP)+, A6
+                    MOVE.B  (SP)+, D7
                     MOVE.L  A6, -(SP)
                     RTS
 
-OC_ONE_EA_XFS_WORD  MOVE.L  (SP)+, A6
-                    MOVE.W  (SP)+, D2
+*--------------------------------------------------
+* OC_XFS_WORD: Transfer from Stack (Word Data)
+*--------------------------------------------------
+OC_XFS_WORD         MOVE.L  (SP)+, A6
+                    MOVE.W  (SP)+, D7
                     MOVE.L  A6, -(SP)
                     RTS
 
-OC_ONE_EA_XFS_LONG  MOVE.L  (SP)+, A6
-                    MOVE.L  (SP)+, D2
+*--------------------------------------------------
+* OC_XFS_LONG: Transfer from Stack (Long Data)
+*--------------------------------------------------
+OC_XFS_LONG         MOVE.L  (SP)+, A6
+                    MOVE.L  (SP)+, D7
                     MOVE.L  A6, -(SP)
                     RTS
 
-OC_ONE_EA_XTS_BYTE  MOVE.L  (SP)+, A6
-                    MOVE.B  D2, -(SP)
+*--------------------------------------------------
+* OC_XTS_BYTE: Transfer to Stack (Byte Data)
+*--------------------------------------------------
+OC_XTS_BYTE         MOVE.L  (SP)+, A6
+                    MOVE.B  D7, -(SP)
                     MOVE.L  A6, -(SP)
                     RTS
 
-OC_ONE_EA_XTS_WORD  MOVE.L  (SP)+, A6
-                    MOVE.W  D2, -(SP)
+*--------------------------------------------------
+* OC_XTS_WORD: Transfer to Stack (Word Data)
+*--------------------------------------------------
+OC_XTS_WORD         MOVE.L  (SP)+, A6
+                    MOVE.W  D7, -(SP)
                     MOVE.L  A6, -(SP)
                     RTS
 
-OC_ONE_EA_XTS_LONG  MOVE.L  (SP)+, A6
-                    MOVE.L  D2, -(SP)
+*--------------------------------------------------
+* OC_XTS_LONG: Transfer to Stack (Long Data)
+*--------------------------------------------------
+OC_XTS_LONG         MOVE.L  (SP)+, A6
+                    MOVE.L  D7, -(SP)
                     MOVE.L  A6, -(SP)
                     RTS
 
-OC_ONE_EA_XDFS      CMPI.B  #1, D0
-                    BEQ     OC_ONE_EA_XFS_BYTE
+*--------------------------------------------------
+* OC_XDFS: Transfer Data from Stack
+*--------------------------------------------------
+OC_XDFS             CMPI.B  #1, D0
+                    BEQ     OC_XFS_BYTE
                     
                     CMPI.B  #2, D0
-                    BEQ     OC_ONE_EA_XFS_WORD
+                    BEQ     OC_XFS_WORD
                     
                     CMPI.B  #4, D0
-                    BEQ     OC_ONE_EA_XFS_LONG
+                    BEQ     OC_XFS_LONG
                     
                     RTS
 
-OC_ONE_EA_XDTS      CMPI.B  #1, D0
-                    BEQ     OC_ONE_EA_XTS_BYTE
+*--------------------------------------------------
+* OC_XDFS: Transfer Data to Stack
+*--------------------------------------------------
+OC_XDTS             CMPI.B  #1, D0
+                    BEQ     OC_XTS_BYTE
                     
                     CMPI.B  #2, D0
-                    BEQ     OC_ONE_EA_XTS_WORD
+                    BEQ     OC_XTS_WORD
                     
                     CMPI.B  #4, D0
-                    BEQ     OC_ONE_EA_XTS_LONG
+                    BEQ     OC_XTS_LONG
                     
+                    RTS
+
+*--------------------------------------------------
+* OC_NO_EA
+*--------------------------------------------------
+* This subroutine assumes the following:
+*
+* 1. D3 contains the Opcode string stack code.
+*--------------------------------------------------
+OC_NO_EA            MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
+                    MOVE.B  #0, -(SP)   ; There is no size, suffix, or EA, so ocInfo is 0x0.
+                    MOVE.B  D3, -(SP)   ; Put the Opcode string stack code on the stack.
+                    MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
 *--------------------------------------------------
@@ -240,40 +276,45 @@ OC_ONE_EA_XDTS      CMPI.B  #1, D0
 *--------------------------------------------------
 * This subroutine assumes the following:
 *
-* 1. D0 contains the size of the operation.
+* 1. D0 contains the size of the operation. 00 for no size, 01 for byte, 10 for word, 11 for long.
 * 2. D1 contains the source bit-packed byte.
-* 3. D2 contains the table mask.
-* 4. D3 contains the Opcode string stack code.
-* 5. D4 contains the Opcode suffix. 00 for none, 01 for for 'A', 10 for 'R', and 11 for 'L'.
+* 3. D3 contains the source table mask.
+* 4. D5 contains the Opcode string stack code.
+* 5. D6 contains the Opcode suffix. 00 for none, 01 for for A, 10 for R, and 11 for L.
 * 6. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
 *--------------------------------------------------
 OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
-                    MOVE.B  D3, -(SP)   ; Put the Opcode string stack code on the stack.
-                    MOVE.B  D4, -(SP)   ; Put the Opcode suffix on the stack.
-                    MOVE.B  D2, -(SP)   ; Put the Opcode table mask on the stack.
+                    MOVE.B  D5, -(SP)   ; Put the Opcode string stack code on the stack.
+                    MOVE.B  D6, -(SP)   ; Put the Opcode suffix on the stack.
+                    MOVE.B  D3, -(SP)   ; Put the source table mask on the stack.
                     MOVE.B  D1, -(SP)   ; Put the source bit-packed byte on the stack.
                     
                     JSR     GET_SOURCE_EA
-                    JSR     CHECK_ERROR
+                    JSR     OC_CHECK_ERROR
                     
                     MOVE.B  (SP)+, D0           ; Get the error code from the stack.
                     CMPI.B  #ERROR_MASK, D0     ; Check if there's an error.
-                    BEQ     OC_ERROR_ONE_EA     ; There's an error.
+                    BEQ     OC_ERROR            ; There's an error.
                     
+                    * Source EA is fine.
                     * No error beyond this point. Valid information.
+                    
+                    * Get the source EA information from the stack.
                     MOVE.B  (SP)+, D0   ; Get the return size from the stack.
                     MOVE.B  (SP)+, D1   ; Get the eaType from the stack.
                     
                     SUBI.B  #1, D0      ; Return size - 1 is the amount of data on the stack.
                     
-                    JSR     OC_ONE_EA_XDFS
-
+                    JSR     OC_XDFS
+                    
+                    * Get the opcode information from the stack.
                     MOVE.B  (SP)+, D6   ; Get the Opcode suffix from the stack.
                     MOVE.B  (SP)+, D5   ; Get the Opcode string stack code from the stack.
                     MOVE.B  (SP)+, D4   ; Get the Opcode size from the stack.
                     MOVE.L  (SP)+, A5   ; Get the RTS value from the stack.
                     
-                    JSR     OC_ONE_EA_XDTS
+                    * Put the source EA information back on the stack.
+                    JSR     OC_XDTS
                     
                     MOVE.B  D1, -(SP)   ; Put the eaType back on the stack.
                     ADDI.B  #1, D0
@@ -288,9 +329,156 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     LSL.B   #4, D6      ; 00SU0000
                     OR.B    D6, D7      ; SISU0000
                     
-                    * Number of EA
+                    * EA Count
                     ORI.B   #1, D7      ; SISU0001
                     
+                    * Put the opcode information back on the stack.
+                    MOVE.B  D7, -(SP)   ; Put the ocInfo on the stack.
+                    MOVE.B  D5, -(SP)   ; Put the opcode string stack code on the stack.
+                    MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
+                    RTS
+
+*--------------------------------------------------
+* OC_TWO_EA
+*--------------------------------------------------
+* This subroutine assumes the following:
+*
+* 1. D0 contains the size of the operation. 00 for no size, 01 for byte, 10 for word, 11 for long.
+* 2. D1 contains the source bit-packed byte.
+* 3. D2 contains the destination bit-packed byte.
+* 4. D3 contains the source table mask.
+* 5. D4 contains the destination table mask.
+* 6. D5 contains the Opcode string stack code.
+* 7. D6 contains the Opcode suffix. 00 for none, 01 for for A, 10 for R, and 11 for L.
+* 8. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
+* 9. GET_DESTINATION_EA pop exactly 3 bytes off of the stack.
+*--------------------------------------------------
+OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
+                    MOVE.B  D5, -(SP)   ; Put the Opcode string stack code on the stack.
+                    MOVE.B  D6, -(SP)   ; Put the Opcode suffix on the stack.
+                    MOVE.B  D4, -(SP)   ; Put the destination table mask on the stack.
+                    MOVE.B  D2, -(SP)   ; Put the destination bit-packed byte on the stack.
+                    MOVE.B  D3, -(SP)   ; Put the source table mask on the stack.
+                    MOVE.B  D1, -(SP)   ; Put the source bit-packed byte on the stack.
+                    
+                    JSR     GET_SOURCE_EA
+                    JSR     OC_CHECK_ERROR
+                    
+                    MOVE.B  (SP)+, D0           ; Get the error code from the stack.
+                    CMPI.B  #ERROR_MASK, D0     ; Check if there's an error.
+                    BEQ     OC_ERROR            ; There's an error.
+                    
+                    * Source EA is fine. Let's check the destination EA.
+                    
+                    * Get the source EA information from the stack.
+                    MOVE.B  (SP)+, D0   ; Get the source return size from the stack.
+                    MOVE.B  (SP)+, D1   ; Get the source eaType from the stack.
+                    
+                    SUBI.B  #1, D0      ; Return size - 1 is the amount of source data on the stack.
+                    
+                    JSR     OC_XDFS
+                    
+                    * Get the destination bit-packed byte and table mask from the stack.
+                    MOVE.B  (SP)+, D2   ; Get the destination bit-packed byte from the stack.
+                    MOVE.B  (SP)+, D4   ; Get the destination table mask from the stack.
+                    
+                    JSR     OC_XDTS
+                    
+                    * Put the source EA information back on the stack.
+                    MOVE.B  D1, -(SP)   ; Put the source eaType back on the stack.
+                    ADDI.B  #1, D0      ; Restore the original source return size.
+                    MOVE.B  D0, -(SP)   ; Put the source return size back on the stack.
+                    
+                    * Put the destination data offset, table mask, and bit-packed byte back on the stack.
+                    SUBI.B  #1, D0      ; Return size - 1 is the amount of source data on the stack.
+                    MOVE.B  D0, -(SP)   ; Put the destination data offset on the stack.
+                    MOVE.B  D4, -(SP)   ; Put the destination table mask on the stack.
+                    MOVE.B  D2, -(SP)   ; Put the destination bit-packed byte on the stack.
+                    
+                    JSR     GET_DESTINATION_EA
+                    JSR     OC_CHECK_ERROR
+                    
+                    MOVE.B  (SP)+, D0           ; Get the error code from the stack.
+                    CMPI.B  #ERROR_MASK, D0     ; Check if there's an error.
+                    BEQ     OC_ERROR            ; There's an error.
+                    
+                    * Destination EA is fine.
+                    * No error beyond this point. Valid information.
+                    
+                    * Get the source and destination EA information from the stack.
+                    MOVE.B  (SP)+, D0   ; Get the destination return size from the stack.
+                    MOVE.B  (SP)+, D1   ; Get the destination eaType from the stack.
+                    
+                    SUBI.B  #1, D0      ; Return size - 1 is the amount of destination data on the stack.
+                    
+                    JSR     OC_XDFS
+                    
+                    MOVE.L  D7, D3      ; Move the destination data to the appropriate register.
+                    LSL.W   #8, D0      ; Shift the destination data return size to the left by one byte.
+                    LSL.W   #8, D1      ; Shift the destination eaType to left by one byte.
+                    
+                    MOVE.B  (SP)+, D0   ; Get the source return size from the stack.
+                    MOVE.B  (SP)+, D1   ; Get the source eaType from the stack.
+                    
+                    SUBI.B  #1, D0      ; Return size - 1 is the amount of source data on the stack.
+                    
+                    JSR     OC_XDFS
+                    
+                    MOVE.L  D7, D2      ; Move the source data to the appropriate register.
+                    
+                    * Fix the order of the return sizes and eaTypes.
+                    MOVE.W  D0, D7      ; Make a copy of the return sizes.
+                    LSL.W   #8, D0      ; Shift the source return type to the left by one byte.
+                    LSR.W   #8, D7      ; Shift the destination return type to the right by one byte.
+                    OR.B    D7, D0      ; Now the return sizes are in the correct order.
+                                        ; Result: 0000SSDD, where SS is the source return size, and DD is the destination return size.
+                    
+                    MOVE.W  D1, D7      ; Make a copy of the eaTypes.
+                    LSL.W   #8, D1      ; Shift the source eaType to the left by one byte.
+                    LSR.W   #8, D7      ; Shift the destination eaType to the right by one byte.
+                    OR.B    D7, D1      ; Noe the eaTypes are in the correct order.
+                                        ; Result: 0000SSDD, where SS is the source eaType, and DD is the destination eaType.
+                    
+                    * Get the opcode information from the stack.
+                    MOVE.B  (SP)+, D6   ; Get the Opcode suffix from the stack.
+                    MOVE.B  (SP)+, D5   ; Get the Opcode string stack code from the stack.
+                    MOVE.B  (SP)+, D4   ; Get the Opcode size from the stack.
+                    MOVE.L  (SP)+, A5   ; Get the RTS value from the stack.
+                    
+                    * Put the destination information back on the stack.
+                    MOVE.L  D3, D7
+                    
+                    JSR     OC_XDTS     ; Put the destination data back on the stack.
+                    
+                    MOVE.B  D1, -(SP)   ; Put the destination eaType back on the stack.
+                    ADDI.B  #1, D0      ; Restore the original destination return size.
+                    MOVE.B  D0, -(SP)   ; Put the destination return size back on the stack.
+                    
+                    LSR.B   #8, D0      ; Remove the destination return size from the register.
+                    LSR.B   #8, D1      ; Remove the destination eaType from the register.
+                    
+                    * Put the source information back on the stack.
+                    MOVE.L  D2, D7
+                    
+                    JSR     OC_XDTS     ; Put the source data back on the stack.
+                    
+                    MOVE.B  D1, -(SP)   ; Put the source eaType back on the stack.
+                    ADDI.B  #1, D0      ; Restore the original source return size.
+                    MOVE.B  D0, -(SP)   ; Put the source return size back on the stack.
+                    
+                    * Construct Opcode Decoder return value.
+                    * Opcode Size
+                    LSL.B   #6, D4      ; SI000000
+                    OR.B    D4, D7      ; SI000000
+                    
+                    * Opcode Suffix
+                    LSL.B   #4, D6      ; 00SU0000
+                    OR.B    D6, D7      ; SISU0000
+                    
+                    * EA Count
+                    ORI.B   #2, D7      ; SISU0010
+                    
+                    * Put the opcode information back on the stack.
                     MOVE.B  D7, -(SP)   ; Put the ocInfo on the stack.
                     MOVE.B  D5, -(SP)   ; Put the opcode string stack code on the stack.
                     MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
@@ -1006,9 +1194,8 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     CLR     D3
                     
                     * Size
-                    MOVE.B  #2, D0
+                    MOVE.B  #OC_LONG_SIZE, D0
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
                     LSL.B   #3, D1
                     
                     * Source Mode
@@ -1035,8 +1222,8 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     * There is no destination register.
                     
                     MOVE.B  #TBL_MASK_JSR, D2
-                    MOVE.B  #JSR_OC_SS, D3
-                    MOVE.B  #0, D4
+                    MOVE.B  #JSR_OC_SS, D5
+                    MOVE.B  #0, D6
                     
                     BRA     OC_ONE_EA
 
@@ -1117,7 +1304,6 @@ PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from t
                     JSR     SET_MOVE_OC_SIZE
                     
                     MOVE.W  D0, D1
-                    ADDI.B  #1, D1
                     LSL.W   #3, D1                  ; Shift left 3 bits. Size now isolated in the form 000SS000.
                     MOVE.W  D1, D2                  ; 
                     
@@ -1156,29 +1342,12 @@ PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from t
                     OR.B    D3, D2                  ; OR the register with the size in D0.
                                                     ; Result: 000SSRRR.
 
-                    MOVE.B  D0, -(SP)
-                    
-                    MOVE.B  #TBL_MASK_MOVE_SRC, -(SP)
-                    MOVE.B  D1, -(SP)
-                    
-                    JSR     GET_SOURCE_EA
-                    
-                    MOVE.B  (SP)+, D4
-                    MOVE.B  (SP)+, D5
-                    
-                    MOVE.B  (SP)+, D2
-                    MOVE.B  (SP)+, D1
-                    MOVE.B  (SP)+, D0
-                    
-                    MOVE.B  #TBL_MASK_MOVE_DST, -(SP)
-                    MOVE.B  D2, -(SP)
-                    
-                    JSR     GET_DESTINATION_EA
-                    
-                    MOVE.B  (SP)+, D4
-                    MOVE.B  (SP)+, D5
+                    MOVE.B  #TBL_MASK_MOVE_SRC, D3
+                    MOVE.B  #TBL_MASK_MOVE_DST, D4
+                    MOVE.B  #MOVE_OC_SS, D5
+                    MOVE.B  #0, D6
 
-                    BRA     PROCESSED_OC            ; We are done processing.
+                    BRA     OC_TWO_EA
 
 SET_MOVE_OC_SIZE    CMPI.B  #1, D0
                     BEQ     SET_MOVE_SIZE_BYTE
@@ -1191,13 +1360,13 @@ SET_MOVE_OC_SIZE    CMPI.B  #1, D0
                     
                     BRA     INVALID_OC
 
-SET_MOVE_SIZE_BYTE  MOVE.B  #0, D0
+SET_MOVE_SIZE_BYTE  MOVE.B  #OC_BYTE_SIZE, D0
                     RTS
 
-SET_MOVE_SIZE_WORD  MOVE.B  #1, D0
+SET_MOVE_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
                     RTS
 
-SET_MOVE_SIZE_LONG  MOVE.B  #2, D0
+SET_MOVE_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
                     RTS
 
 *----------------------------------------------------
@@ -1319,7 +1488,9 @@ PROCESS_RTS_OC      MOVE.L  (SP)+, D0
                     CLR     D2
                     CLR     D3
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #RTS_OC_SS, D3
+                    
+                    BRA     OC_NO_EA
                     
 *--------------------------------------------------
 * SUB & SUBA
@@ -2015,6 +2186,8 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
+
 
 
 
