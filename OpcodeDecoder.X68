@@ -307,8 +307,8 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 *   and/or GET_DESTINATION_EA, and will provide information about the source and
 *   destination effective addresses. If an error does happen to occur, then the
 *   stack will only contain one byte, where the most significant bit is 1. If no
-*   occurs, then there will always be two bytes (plus additional EA data) to pop
-*   off the stack. The value of A2 and A3 are unchanged by this subroutine.
+*   error occurs, then there will always be two bytes (plus additional EA data) to
+*   pop off the stack. The value of A2 and A3 are unchanged by this subroutine.
 *
 * + opcode: byte, ocInfo: byte, (additional data, see below)    PROCESS_OC(void)
 *   OR
@@ -2015,6 +2015,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
