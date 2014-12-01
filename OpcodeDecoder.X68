@@ -8,6 +8,7 @@ ERROR_MASK          EQU     %10000000
 * Opcode Decoder Test Instructions
 *----------------------------------------
 ADD_INSTR           EQU     $D2385000           ; ADD.B $5000, D1
+ADD_INSTR_2         EQU     $D3385000           ; ADD.B D1, $5000
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
 ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
 AND_INSTR           EQU     $C63C0055           ; AND.W #%01010101, D3
@@ -32,9 +33,15 @@ OC_BYTE_SIZE        EQU     $1
 OC_WORD_SIZE        EQU     $2
 OC_LONG_SIZE        EQU     $3
 
+OC_SUFFIX_NONE      EQU     $0
+OC_SUFFIX_A         EQU     $1
+OC_SUFFIX_R         EQU     $2
+OC_SUFFIX_L         EQU     $3
+
 ADD_OC              EQU     $D000
 ADD_OC_MASK         EQU     $F000
 ADD_OC_SS           EQU     $0C
+ADDQ_OC_SS          EQU     $3B
 
 ADDQ_OC             EQU     $5000
 ADDQ_OC_MASK        EQU     $F100
@@ -144,8 +151,9 @@ TBL_MASK_L_ADDR     EQU     %01000000
 TBL_MASK_DATA       EQU     %10000000
 
 * ADD Masks
-TBL_MASK_ADD_SRC    EQU     %11111111 ;Allow all
-TBL_MASK_ADD_DST    EQU     %01111101 ;
+TBL_MASK_ADD_SRC    EQU     %11111111
+TBL_MASK_ADD_DST    EQU     %01111100
+TBL_MASK_ADDQ_DST   EQU     %01111111
 
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
@@ -158,7 +166,7 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    MOVE.L  #ADD_INSTR, (A6)
+                    *MOVE.W  #ADDQ_INSTR, (A6)  ; BROKEN!!!!!!!!!!!!!!!!!
                     *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
@@ -619,7 +627,6 @@ PROCESS_ADD_OC      MOVE.L  (SP)+, D0
 PROCESS_ADDA_OC     JSR     SET_ADDA_OC_SIZE
 
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
 
@@ -652,7 +659,12 @@ PROCESS_ADDA_OC     JSR     SET_ADDA_OC_SIZE
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_ADD_SRC, D3
+                    MOVE.B  #TBL_MASK_ADDR_REG, D4
+                    MOVE.B  #ADD_OC_SS, D5
+                    MOVE.B  #OC_SUFFIX_A, D6
+                    
+                    BRA     OC_TWO_EA
 
 SET_ADDA_OC_SIZE    CMPI.B  #3, D0
                     BEQ     SET_ADDA_SIZE_WORD
@@ -662,14 +674,13 @@ SET_ADDA_OC_SIZE    CMPI.B  #3, D0
                     
                     BRA     INVALID_OC
 
-SET_ADDA_SIZE_WORD  MOVE.B  #1, D0
+SET_ADDA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
                     RTS
 
-SET_ADDA_SIZE_LONG  MOVE.B  #2, D0
+SET_ADDA_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
                     RTS
 
 PROCESS_ADD_OC_SRC  * Size
-                    MOVE.B  D0, D1
                     ADDI.B  #1, D0
                     MOVE.B  D0, D1
                     LSL.B   #3, D1
@@ -703,25 +714,27 @@ PROCESS_ADD_OC_SRC  * Size
                     OR.B    D3, D2
                     
                     MOVE.B  #TBL_MASK_ADD_SRC, D3
-                    MOVE.B  #TBL_MASK_ADD_DST, D4
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
                     MOVE.B  #ADD_OC_SS, D5
-                    MOVE.B  #0, D6
+                    MOVE.B  #OC_SUFFIX_NONE, D6
 
                     BRA     OC_TWO_EA
 
-PROCESS_ADD_OC_DST  SUBI.B  #4, D0
-                    MOVE.B  D0, D2
-                    ADDI.B  #1, D2
-                    LSL.B   #3, D2
+PROCESS_ADD_OC_DST  * Size
+                    SUBI.B  #3, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Source Mode
                     * Not needed since mode is 000.
                     
                     * Source Register
-                    MOVE.W  (A2), D1
-                    LSL.W   #4, D1
-                    LSR.W   #8, D1
-                    LSR.W   #5, D1
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
                     
                     * Destination Register
                     MOVE.W  (A2), D3
@@ -740,7 +753,12 @@ PROCESS_ADD_OC_DST  SUBI.B  #4, D0
                     LSL.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_ADD_DST, D4
+                    MOVE.B  #ADD_OC_SS, D5
+                    MOVE.B  #OC_SUFFIX_NONE, D6
+
+                    BRA     OC_TWO_EA
 
 *--------------------------------------------------
 * ADDQ
@@ -761,16 +779,17 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     MOVE.W  (A2), D0
                     LSL.W   #8, D0
                     LSR.W   #8, D0
-                    LSR.W   #5, D0
-                    MOVE.B  D0, D2
-                    ADDI.W  #1, D2
-                    LSL.W   #3, D2
+                    LSR.W   #6, D0
+                    ADDI.W  #1, D0
+                    MOVE.B  D0, D1
+                    LSL.W   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Data
-                    MOVE.W  (A2), D1
-                    LSL.W   #4, D1
-                    LSR.W   #8, D1
-                    LSR.W   #5, D1
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
                     
                     * Destination Mode
                     MOVE.W  (A2), D3
@@ -789,7 +808,12 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA, D3
+                    MOVE.B  #TBL_MASK_ADDQ_DST, D4
+                    MOVE.B  #ADDQ_OC_SS, D5
+                    MOVE.B  #OC_SUFFIX_NONE, D6
+                    
+                    BRA     OC_TWO_EA
 
 *----------------------------------------------------
 * AND
@@ -1238,7 +1262,7 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     
                     MOVE.B  #TBL_MASK_JSR, D2
                     MOVE.B  #JSR_OC_SS, D5
-                    MOVE.B  #0, D6
+                    MOVE.B  #OC_SUFFIX_NONE, D6
                     
                     BRA     OC_ONE_EA
 
@@ -1360,7 +1384,7 @@ PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from t
                     MOVE.B  #TBL_MASK_MOVE_SRC, D3
                     MOVE.B  #TBL_MASK_MOVE_DST, D4
                     MOVE.B  #MOVE_OC_SS, D5
-                    MOVE.B  #0, D6
+                    MOVE.B  #OC_SUFFIX_NONE, D6
 
                     BRA     OC_TWO_EA
 
@@ -2201,6 +2225,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
