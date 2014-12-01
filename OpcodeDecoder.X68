@@ -2,6 +2,8 @@ START               ORG		$1000
 
 START_ADDRESS       EQU     $4000
 
+ERROR_MASK          EQU     %10000000
+
 *----------------------------------------
 * Opcode Decoder Test Instructions
 *----------------------------------------
@@ -15,7 +17,8 @@ CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
 DIVS_INSTR          EQU     $89C0               ; DIVS.W D0, D4
 EOR_INSTR           EQU     $B5786000           ; EOR.W D2, $6000
 EORI_INSTR          EQU     $0A410007           ; EORI.W #7, D1
-JSR_INSTR           EQU     $4EB90000           ; JSR $0000101A (NOTE: The instruction is not complete. Should be 6 bytes, not 4!)
+JSR_INSTR_OC        EQU     $4EB9
+JSR_INSTR_DATA      EQU     $0000101A           ; JSR $0000101A
 LEA_INSTR           EQU     $4BF85000           ; LEA $5000, A5
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
@@ -47,6 +50,7 @@ EORI_OC_MASK        EQU     $FF00
 
 JSR_OC              EQU     $4E80
 JSR_OC_MASK         EQU     $FF80
+JSR_OC_SS           EQU     $2B
 
 LEA_OC              EQU     $41C0
 LEA_OC_MASK         EQU     $F1C0
@@ -151,7 +155,10 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    MOVE.L  #JSR_INSTR, START_ADDRESS
+                    MOVEA.W  #START_ADDRESS, A6
+                    MOVE.W  #JSR_INSTR_OC, (A6)+
+                    MOVE.L  #JSR_INSTR_DATA, (A6)
+                    
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
@@ -160,22 +167,134 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
                     MOVE.B  #9, D0
                     TRAP    #15
 
+OC_ERROR_ONE_EA     
+
+CHECK_ERROR         MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
+                    MOVE.B  (SP)+, D0   ; Get the GET_x_EA return size from the stack.
+                    MOVE.B  (SP)+, D1   ; Get the GET_x_EA eaType from the stack.
+                    MOVE.B  D1, D2      ; Copy the eaType.
+                    
+                    ANDI.B  #ERROR_MASK, D2 ; Apply the error mask.
+                    
+                    MOVE.B  D1, -(SP)   ; Put the eaType back on the stack.
+                    MOVE.B  D0, -(SP)   ; Put the return size back on the stack.
+                    MOVE.B  D2, -(SP)   ; Put the error code on the stack.
+                    
+                    MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
+                    RTS
+
+OC_ONE_EA_XFS_BYTE  MOVE.L  (SP)+, A6
+                    MOVE.B  (SP)+, D2
+                    MOVE.L  A6, -(SP)
+                    RTS
+
+OC_ONE_EA_XFS_WORD  MOVE.L  (SP)+, A6
+                    MOVE.W  (SP)+, D2
+                    MOVE.L  A6, -(SP)
+                    RTS
+
+OC_ONE_EA_XFS_LONG  MOVE.L  (SP)+, A6
+                    MOVE.L  (SP)+, D2
+                    MOVE.L  A6, -(SP)
+                    RTS
+
+OC_ONE_EA_XTS_BYTE  MOVE.L  (SP)+, A6
+                    MOVE.B  D2, -(SP)
+                    MOVE.L  A6, -(SP)
+                    RTS
+
+OC_ONE_EA_XTS_WORD  MOVE.L  (SP)+, A6
+                    MOVE.W  D2, -(SP)
+                    MOVE.L  A6, -(SP)
+                    RTS
+
+OC_ONE_EA_XTS_LONG  MOVE.L  (SP)+, A6
+                    MOVE.L  D2, -(SP)
+                    MOVE.L  A6, -(SP)
+                    RTS
+
+OC_ONE_EA_XDFS      CMPI.B  #1, D0
+                    BEQ     OC_ONE_EA_XFS_BYTE
+                    
+                    CMPI.B  #2, D0
+                    BEQ     OC_ONE_EA_XFS_WORD
+                    
+                    CMPI.B  #4, D0
+                    BEQ     OC_ONE_EA_XFS_LONG
+                    
+                    RTS
+
+OC_ONE_EA_XDTS      CMPI.B  #1, D0
+                    BEQ     OC_ONE_EA_XTS_BYTE
+                    
+                    CMPI.B  #2, D0
+                    BEQ     OC_ONE_EA_XTS_WORD
+                    
+                    CMPI.B  #4, D0
+                    BEQ     OC_ONE_EA_XTS_LONG
+                    
+                    RTS
+
 *--------------------------------------------------
 * OC_ONE_EA
 *--------------------------------------------------
 * This subroutine assumes the following:
 *
 * 1. D0 contains the size of the operation.
-* 2. D1 contains the source bit packed byte.
+* 2. D1 contains the source bit-packed byte.
 * 3. D2 contains the table mask.
+* 4. D3 contains the Opcode string stack code.
+* 5. D4 contains the Opcode suffix. 00 for none, 01 for for 'A', 10 for 'R', and 11 for 'L'.
+* 6. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
 *--------------------------------------------------
-OC_ONE_EA           MOVE.B  D0, -(SP)
-                    MOVE.B  D1, -(SP)
-                    MOVE.B  D2, -(SP)
+OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
+                    MOVE.B  D3, -(SP)   ; Put the Opcode string stack code on the stack.
+                    MOVE.B  D4, -(SP)   ; Put the Opcode suffix on the stack.
+                    MOVE.B  D2, -(SP)   ; Put the Opcode table mask on the stack.
+                    MOVE.B  D1, -(SP)   ; Put the source bit-packed byte on the stack.
                     
                     JSR     GET_SOURCE_EA
+                    JSR     CHECK_ERROR
                     
-OC_ONE_EA_LOOP      
+                    MOVE.B  (SP)+, D0           ; Get the error code from the stack.
+                    CMPI.B  #ERROR_MASK, D0     ; Check if there's an error.
+                    BEQ     OC_ERROR_ONE_EA     ; There's an error.
+                    
+                    * No error beyond this point. Valid information.
+                    MOVE.B  (SP)+, D0   ; Get the return size from the stack.
+                    MOVE.B  (SP)+, D1   ; Get the eaType from the stack.
+                    
+                    SUBI.B  #1, D0      ; Return size - 1 is the amount of data on the stack.
+                    
+                    JSR     OC_ONE_EA_XDFS
+
+                    MOVE.B  (SP)+, D6   ; Get the Opcode suffix from the stack.
+                    MOVE.B  (SP)+, D5   ; Get the Opcode string stack code from the stack.
+                    MOVE.B  (SP)+, D4   ; Get the Opcode size from the stack.
+                    MOVE.L  (SP)+, A5   ; Get the RTS value from the stack.
+                    
+                    JSR     OC_ONE_EA_XDTS
+                    
+                    MOVE.B  D1, -(SP)   ; Put the eaType back on the stack.
+                    ADDI.B  #1, D0
+                    MOVE.B  D0, -(SP)   ; Put the return size back on the stack.
+                    
+                    * Construct Opcode Decoder return value.
+                    * Opcode Size
+                    LSL.B   #6, D4      ; SI000000
+                    OR.B    D4, D7      ; SI000000
+                    
+                    * Opcode Suffix
+                    LSL.B   #4, D6      ; 00SU0000
+                    OR.B    D6, D7      ; SISU0000
+                    
+                    * Number of EA
+                    ORI.B   #1, D7      ; SISU0001
+                    
+                    MOVE.B  D7, -(SP)   ; Put the OCInfo on the stack.
+                    MOVE.B  D5, -(SP)   ; Put the OCType on the stack.
+                    MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
+                    RTS
 
 *--------------------------------------------------
 * PROCESS_OC Subroutine
@@ -840,6 +959,8 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     * There is no destination register.
                     
                     MOVE.B  #TBL_MASK_JSR, D2
+                    MOVE.B  #JSR_OC_SS, D3
+                    MOVE.B  #0, D4
                     
                     BRA     OC_ONE_EA
 
@@ -1818,6 +1939,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 *~Font name~Courier New~
 *~Font size~10~
