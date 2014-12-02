@@ -12,6 +12,8 @@ ADD_INSTR_2         EQU     $D3385000           ; ADD.B D1, $5000
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
 ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
 AND_INSTR           EQU     $C63C0055           ; AND.W #%01010101, D3
+BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
+                                                ; BRA.W 4 (equivalent since it's a word displacement)
 CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
 CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
 CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
@@ -48,6 +50,9 @@ ADDQ_OC_MASK        EQU     $F100
 
 AND_OC              EQU     $C000
 AND_OC_MASK         EQU     $F000
+
+BRA_OC              EQU     $6000
+BRA_OC_MASK         EQU     $FF00
 
 CMP_EOR_OC          EQU     $B000
 CMP_EOR_OC_MASK     EQU     $F000
@@ -166,6 +171,7 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
+                    MOVE.L  #BRA_INSTR, (A6)
                     *MOVE.W  #ADDQ_INSTR, (A6)  ; BROKEN!!!!!!!!!!!!!!!!!
                     *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
@@ -579,6 +585,7 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 * =============================================================================      
 PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
+                    JSR     CHECK_BRA_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -908,6 +915,85 @@ PROCESS_AND_OC_DST  SUBI.B  #4, D0
                     OR.B    D3, D2
                     
                     BRA     PROCESSED_OC
+
+*--------------------------------------------------
+* BRA
+*--------------------------------------------------
+CHECK_BRA_OC        MOVE.W  (A2), D0
+                    AND.W   #BRA_OC_MASK, D0
+                    CMP.W   #BRA_OC, D0
+                    BEQ     PROCESS_BRA_OC
+                    RTS
+
+PROCESS_BRA_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Byte Displacement
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSR.W   #8, D3
+                    
+                    CMPI.B  #0, D3
+                    BEQ     PROCESS_BRA_OC_WD
+                    BRA     PROCESS_BRA_OC_BD
+
+PROCESS_BRA_OC_BD   * Size
+                    MOVE.B  #OC_BYTE_SIZE, D0
+                    
+                    MOVE.W  A2, D2
+                    ADDI.B  #2, D2
+                    ADD.B   D3, D2
+                    
+                    RTS
+                    
+PROCESS_BRA_OC_WD   * Size
+                    MOVE.B  #OC_WORD_SIZE, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    
+                    * Branching Address
+                    MOVE.W  A2, D2
+                    ADDI.B  #2, D2
+                    
+                    * Word Displacement
+                    MOVE.W  A2, D3
+                    ADDI.B  #2, D3
+                    MOVE.W  D3, A6
+                    MOVE.W  (A6), D3
+                    
+                    * Destination Address
+                    ADD.W   D3, D2
+                    
+                    * Source Mode
+                    MOVE.B  #%111, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.B  #%001, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * There is no destination mode.
+                    
+                    * Destination Register
+                    * There is no destination register.
+                    
+                    *---
+                    
+                    MOVE.L  A2, -(SP)
+                    MOVE.L  D2, -(SP)
+                    MOVE.W  (A2), -(SP)
+                    MOVE.L  SP, A2
+                    MOVE.B  #TBL_MASK_L_ADDR, -(SP)
+                    MOVE.B  D1, -(SP)
+                    
+                    JSR     GET_SOURCE_EA
+                    
+                    RTS
 
 *----------------------------------------------------
 * CMP, CMPA, and EOR
@@ -2069,7 +2155,7 @@ GET_EA_MODE_5   	CMPI.B #EA_MODE_W_ADDR, D0   	;Is the mode Absolute Word Addres
                     MOVE.B D3, D5               	;Copy the Table Mask
                     ANDI.B #TBL_MASK_W_ADDR, D5  	;Lets mask out the (xxx).W bit
                     CMPI.B #TBL_MASK_W_ADDR, D5  	;Is the (xxx).W bit active?
-                    BNE GET_EA_BAD_MODE      	    ;If it isn't, try (xxx).L mode
+                    BNE GET_EA_MODE_6               ;If it isn't, try (xxx).L mode
                     
                     ; Register Error Checking
                     CMPI.B #EA_W_REG, D1         	;Make sure the mode is %000
@@ -2225,6 +2311,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
