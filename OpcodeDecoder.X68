@@ -2145,8 +2145,8 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                     BNE GET_EA_MODE_7_0     		;If it isn't, continue to the next one
                     
                     ; Byte size data
-                    MOVE.W (A4), -(SP)				;Push the byte data to the stack
-                    MOVE.B #3, D1               	;This is the returnSize (eaType + 1 byte data)
+                    MOVE.B (A4), -(SP)				;Push the byte data to the stack
+                    MOVE.B #2, D1               	;This is the returnSize (eaType + 1 byte data)
                     
                     BRA GET_EA_MODE_7_END     		;Skip to the end
                     
@@ -2225,6 +2225,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
