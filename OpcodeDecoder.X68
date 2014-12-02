@@ -53,6 +53,7 @@ AND_OC_MASK         EQU     $F000
 
 BRA_OC              EQU     $6000
 BRA_OC_MASK         EQU     $FF00
+BRA_OC_CODE         EQU     $A
 
 CMP_EOR_OC          EQU     $B000
 CMP_EOR_OC_MASK     EQU     $F000
@@ -983,15 +984,69 @@ PROCESS_BRA_OC_WD   * Size
                     * There is no destination register.
                     
                     *---
+                    MOVE.B  D0, -(SP)               ; Put the opcode size on the stack.
+                    MOVE.B  #BRA_OC_CODE, -(SP)     ; Put the opcode code on the stack.
                     
-                    MOVE.L  A2, -(SP)
-                    MOVE.L  D2, -(SP)
-                    MOVE.W  (A2), -(SP)
-                    MOVE.L  SP, A2
-                    MOVE.B  #TBL_MASK_L_ADDR, -(SP)
-                    MOVE.B  D1, -(SP)
+                    MOVE.L  A2, -(SP)               ; Put the current instruction address on the stack.
+                    MOVE.L  D2, -(SP)               ; Put the branching address on the stack.
+                    MOVE.W  (A2), -(SP)             ; Put the instruction on the stack.
+                    MOVE.L  SP, A2                  ; Put the current stack pointer in A2.
+                                                    ; This is what fools GET_SOURCE_EA.
+                    MOVE.B  #TBL_MASK_L_ADDR, -(SP) ; Put the table mask on the stack.
+                    MOVE.B  D1, -(SP)               ; Put the source bit-packed byte on the stack.
                     
                     JSR     GET_SOURCE_EA
+                    JSR     OC_CHECK_ERROR
+                    
+                    MOVE.B  (SP)+, D0               ; Get the error code from the stack.
+                    CMPI.B  #ERROR_MASK, D0         ; Check if there's an error.
+                    BEQ     OC_ERROR                ; There's an error.
+                    
+                    MOVE.B  (SP)+, D0               ; Get the return size from the stack.
+                    MOVE.B  (SP)+, D1               ; Get the eaType from the stack.
+                    MOVE.L  (SP)+, D2               ; Get the data from the stack.
+                                                    ; The data *should* be a long.
+                    
+                    * Remove the fake instruction from the stack.
+                    MOVE.W  (SP)+, D7               ; Get the true instruction from the stack.
+                    MOVE.L  (SP)+, D7               ; Get the fake data from the stack.
+                                                    ; The data *should* be a long.
+                    
+                    MOVE.L  (SP)+, A2               ; Restore the current instruction address.
+                    MOVE.B  (SP)+, D5               ; Get the opcode code from the stack.
+                    MOVE.B  (SP)+, D4               ; Get the opcode size from the stack.
+                    MOVE.L  (SP)+, A6               ; Get the RTS value from the stack.
+                    
+                    MOVE.L  D2, -(SP)               ; Put the data back on the stack.
+                    MOVE.B  D1, -(SP)               ; Put the eaType back on the stack.
+                    MOVE.B  D0, -(SP)               ; Put the return size back on the stack.
+                    
+                    * Construct Opcode Decoder return value.
+                    MOVE.L  #0, D7
+                    
+                    * Word Count
+                    MOVE.W  #2, D6
+                    LSL.W   #8, D6
+                    LSL.W   #3, D6
+                    OR.W    D6, D7
+                    
+                    * EA Count
+                    MOVE.W  #1, D6
+                    LSL.W   #8, D6
+                    OR.W    D6, D7
+                    
+                    * Opcode Size
+                    MOVE.W  D4, D6
+                    LSL.W   #6, D6
+                    OR.W    D6, D7
+                    
+                    * Opcode Code
+                    OR.W    D5, D7
+                    
+                    * Put the opcode information back on the stack.
+                    MOVE.W  D7, -(SP)   ; Put the opcode information on the stack.
+                    MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
+                    RTS
                     
                     RTS
 
