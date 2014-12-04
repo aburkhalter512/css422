@@ -187,14 +187,14 @@ TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
 
 * JSR Mask
-TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
+TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
 
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    MOVE.L  #BEQ_INSTR, (A6)
-                    *MOVE.W  #ADDQ_INSTR, (A6)  ; BROKEN!!!!!!!!!!!!!!!!!
+                    *MOVE.L  #BEQ_INSTR, (A6)
+                    MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
@@ -202,8 +202,6 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
-                    
-                    BEQ     INVALID_OC
                     
                     JSR     PROCESS_OC
                     
@@ -258,49 +256,49 @@ OC_CHECK_ERROR      MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
 *------------------------------------------------------------------------------
 * OC_XFS_BYTE: Transfer from Stack (Byte Data)
 *------------------------------------------------------------------------------
-OC_XFS_BYTE         MOVE.L  (SP)+, A6
+OC_XFS_BYTE         MOVE.L  (SP)+, A5
                     MOVE.B  (SP)+, D7
-                    MOVE.L  A6, -(SP)
+                    MOVE.L  A5, -(SP)
                     RTS
 
 *------------------------------------------------------------------------------
 * OC_XFS_WORD: Transfer from Stack (Word Data)
 *------------------------------------------------------------------------------
-OC_XFS_WORD         MOVE.L  (SP)+, A6
+OC_XFS_WORD         MOVE.L  (SP)+, A5
                     MOVE.W  (SP)+, D7
-                    MOVE.L  A6, -(SP)
+                    MOVE.L  A5, -(SP)
                     RTS
 
 *------------------------------------------------------------------------------
 * OC_XFS_LONG: Transfer from Stack (Long Data)
 *------------------------------------------------------------------------------
-OC_XFS_LONG         MOVE.L  (SP)+, A6
+OC_XFS_LONG         MOVE.L  (SP)+, A5
                     MOVE.L  (SP)+, D7
-                    MOVE.L  A6, -(SP)
+                    MOVE.L  A5, -(SP)
                     RTS
 
 *------------------------------------------------------------------------------
 * OC_XTS_BYTE: Transfer to Stack (Byte Data)
 *------------------------------------------------------------------------------
-OC_XTS_BYTE         MOVE.L  (SP)+, A6
+OC_XTS_BYTE         MOVE.L  (SP)+, A5
                     MOVE.B  D7, -(SP)
-                    MOVE.L  A6, -(SP)
+                    MOVE.L  A5, -(SP)
                     RTS
 
 *------------------------------------------------------------------------------
 * OC_XTS_WORD: Transfer to Stack (Word Data)
 *------------------------------------------------------------------------------
-OC_XTS_WORD         MOVE.L  (SP)+, A6
+OC_XTS_WORD         MOVE.L  (SP)+, A5
                     MOVE.W  D7, -(SP)
-                    MOVE.L  A6, -(SP)
+                    MOVE.L  A5, -(SP)
                     RTS
 
 *------------------------------------------------------------------------------
 * OC_XTS_LONG: Transfer to Stack (Long Data)
 *------------------------------------------------------------------------------
-OC_XTS_LONG         MOVE.L  (SP)+, A6
+OC_XTS_LONG         MOVE.L  (SP)+, A5
                     MOVE.L  D7, -(SP)
-                    MOVE.L  A6, -(SP)
+                    MOVE.L  A5, -(SP)
                     RTS
 
 *------------------------------------------------------------------------------
@@ -332,15 +330,91 @@ OC_XDTS             CMPI.B  #1, D0
                     RTS
 
 *------------------------------------------------------------------------------
+* OC_CREATE_RETVAL: Create the Opcode Decoder Return Value
+*------------------------------------------------------------------------------
+OC_CREATE_RETVAL    * Word Count
+                    JSR     OC_SET_WC
+                    
+                    LSL.W   #8, D7
+                    LSL.W   #3, D7
+                    
+                    * EA Count
+                    LSL.W   #8, D6
+                    OR.W    D6, D7
+                    
+                    * Opcode Size
+                    MOVE.W  D4, D6
+                    LSL.W   #6, D6
+                    OR.W    D6, D7
+                    
+                    * Opcode Code
+                    OR.W    D5, D7
+                    
+                    * Put the opcode information back on the stack.
+                    MOVE.W  D7, -(SP)   ; Put the opcode information on the stack.
+                    MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
+                    RTS
+
+OC_SET_WC           CMPI.B  #0, D7
+                    BEQ     OC_SET_WC_0
+                    
+                    CMPI.B  #1, D7
+                    BEQ     OC_SET_WC_1
+                    
+                    CMPI.B  #2, D7
+                    BEQ     OC_SET_WC_1
+                    
+                    CMPI.B  #3, D7
+                    BEQ     OC_SET_WC_2
+                    
+                    CMPI.B  #4, D7
+                    BEQ     OC_SET_WC_2
+                    
+                    CMPI.B  #5, D7
+                    BEQ     OC_SET_WC_3
+                    
+                    CMPI.B  #6, D7
+                    BEQ     OC_SET_WC_3
+                    
+                    CMPI.B  #8, D7
+                    BEQ     OC_SET_WC_4
+                    
+                    BRA     INVALID_OC  ; 7+ which indicates a bug.
+
+OC_SET_WC_0         MOVE.W  #0, D7
+                    RTS
+
+OC_SET_WC_1         MOVE.W  #1, D7
+                    RTS
+                    
+OC_SET_WC_2         MOVE.W  #2, D7
+                    RTS
+
+OC_SET_WC_3         MOVE.W  #3, D7
+                    RTS
+
+OC_SET_WC_4         MOVE.W  #4, D7
+                    RTS
+
+OC_SET_WC_5         MOVE.W  #5, D7
+                    RTS
+
+OC_SET_WC_6         MOVE.W  #6, D7
+                    RTS
+
+OC_SET_WC_8         MOVE.W  #8, D7
+                    RTS
+
+*------------------------------------------------------------------------------
 * OC_NO_EA
 *------------------------------------------------------------------------------
 * This subroutine assumes the following:
 *
-* 1. D3 contains the Opcode string stack code.
+* 1. D5 contains the Opcode string stack code.
 *------------------------------------------------------------------------------
 OC_NO_EA            MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
-                    MOVE.B  #0, -(SP)   ; There is no size, suffix, or EA, so ocInfo is 0x0.
-                    MOVE.B  D3, -(SP)   ; Put the Opcode string stack code on the stack.
+                    MOVE.B  D5, -(SP)   ; Put the Opcode code on the stack.
+                    MOVE.B  #0, -(SP)   ; There is no word count or EA count.
                     MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
@@ -358,7 +432,6 @@ OC_NO_EA            MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
 *------------------------------------------------------------------------------
 OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  D5, -(SP)   ; Put the Opcode string stack code on the stack.
-                    MOVE.B  D6, -(SP)   ; Put the Opcode suffix on the stack.
                     MOVE.B  D3, -(SP)   ; Put the source table mask on the stack.
                     MOVE.B  D1, -(SP)   ; Put the source bit-packed byte on the stack.
                     
@@ -381,10 +454,9 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     JSR     OC_XDFS
                     
                     * Get the opcode information from the stack.
-                    MOVE.B  (SP)+, D6   ; Get the Opcode suffix from the stack.
                     MOVE.B  (SP)+, D5   ; Get the Opcode string stack code from the stack.
                     MOVE.B  (SP)+, D4   ; Get the Opcode size from the stack.
-                    MOVE.L  (SP)+, A5   ; Get the RTS value from the stack.
+                    MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
                     
                     * Put the source EA information back on the stack.
                     JSR     OC_XDTS
@@ -393,23 +465,14 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     ADDI.B  #1, D0
                     MOVE.B  D0, -(SP)   ; Put the return size back on the stack.
                     
-                    * Construct Opcode Decoder return value.
-                    * Opcode Size
-                    LSL.B   #6, D4      ; SI000000
-                    OR.B    D4, D7      ; SI000000
-                    
-                    * Opcode Suffix
-                    LSL.B   #4, D6      ; 00SU0000
-                    OR.B    D6, D7      ; SISU0000
+                    * Word Count Preprocessing
+                    MOVE.B  D0, D7
+                    SUBI.B  #1, D7
                     
                     * EA Count
-                    ORI.B   #1, D7      ; SISU0001
+                    MOVE.B  #1, D6
                     
-                    * Put the opcode information back on the stack.
-                    MOVE.B  D7, -(SP)   ; Put the ocInfo on the stack.
-                    MOVE.B  D5, -(SP)   ; Put the opcode string stack code on the stack.
-                    MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
-                    RTS
+                    BRA     OC_CREATE_RETVAL
 
 *------------------------------------------------------------------------------
 * OC_TWO_EA
@@ -428,7 +491,6 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 *------------------------------------------------------------------------------
 OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  D5, -(SP)   ; Put the Opcode string stack code on the stack.
-                    MOVE.B  D6, -(SP)   ; Put the Opcode suffix on the stack.
                     MOVE.B  D4, -(SP)   ; Put the destination table mask on the stack.
                     MOVE.B  D2, -(SP)   ; Put the destination bit-packed byte on the stack.
                     MOVE.B  D3, -(SP)   ; Put the source table mask on the stack.
@@ -448,6 +510,7 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  (SP)+, D1   ; Get the source eaType from the stack.
                     
                     SUBI.B  #1, D0      ; Return size - 1 is the amount of source data on the stack.
+                    MOVE.B  D0, D6      ; Make a copy of the amount of source data.
                     
                     JSR     OC_XDFS
                     
@@ -463,8 +526,7 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  D0, -(SP)   ; Put the source return size back on the stack.
                     
                     * Put the destination data offset, table mask, and bit-packed byte back on the stack.
-                    SUBI.B  #1, D0      ; Return size - 1 is the amount of source data on the stack.
-                    MOVE.B  D0, -(SP)   ; Put the destination data offset on the stack.
+                    MOVE.B  D6, -(SP)   ; Put the destination data offset on the stack.
                     MOVE.B  D4, -(SP)   ; Put the destination table mask on the stack.
                     MOVE.B  D2, -(SP)   ; Put the destination bit-packed byte on the stack.
                     
@@ -483,6 +545,7 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  (SP)+, D1   ; Get the destination eaType from the stack.
                     
                     SUBI.B  #1, D0      ; Return size - 1 is the amount of destination data on the stack.
+                    ADD.B   D0, D6      ; Add the amount of destination data to the amount of source data.
                     
                     JSR     OC_XDFS
                     
@@ -513,10 +576,9 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                                         ; Result: 0000SSDD, where SS is the source eaType, and DD is the destination eaType.
                     
                     * Get the opcode information from the stack.
-                    MOVE.B  (SP)+, D6   ; Get the Opcode suffix from the stack.
                     MOVE.B  (SP)+, D5   ; Get the Opcode string stack code from the stack.
                     MOVE.B  (SP)+, D4   ; Get the Opcode size from the stack.
-                    MOVE.L  (SP)+, A5   ; Get the RTS value from the stack.
+                    MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
                     
                     * Put the destination information back on the stack.
                     MOVE.L  D3, D7
@@ -539,23 +601,13 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     ADDI.B  #1, D0      ; Restore the original source return size.
                     MOVE.B  D0, -(SP)   ; Put the source return size back on the stack.
                     
-                    * Construct Opcode Decoder return value.
-                    * Opcode Size
-                    LSL.B   #6, D4      ; SI000000
-                    OR.B    D4, D7      ; SI000000
-                    
-                    * Opcode Suffix
-                    LSL.B   #4, D6      ; 00SU0000
-                    OR.B    D6, D7      ; SISU0000
+                    * Word Count Preprocessing
+                    MOVE.B  D6, D7
                     
                     * EA Count
-                    ORI.B   #2, D7      ; SISU0010
+                    MOVE.B  #2, D6
                     
-                    * Put the opcode information back on the stack.
-                    MOVE.B  D7, -(SP)   ; Put the ocInfo on the stack.
-                    MOVE.B  D5, -(SP)   ; Put the opcode string stack code on the stack.
-                    MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
-                    RTS
+                    BRA     OC_CREATE_RETVAL
 
 *------------------------------------------------------------------------------
 * PROCESS_Bcc_OC
@@ -655,32 +707,13 @@ PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     MOVE.B  D1, -(SP)               ; Put the eaType back on the stack.
                     MOVE.B  D0, -(SP)               ; Put the return size back on the stack.
                     
-                    * Construct Opcode Decoder return value.
-                    MOVE.L  #0, D7
-                    
                     * Word Count
-                    MOVE.W  #2, D6
-                    LSL.W   #8, D6
-                    LSL.W   #3, D6
-                    OR.W    D6, D7
+                    MOVE.L  #2, D7
                     
                     * EA Count
-                    MOVE.W  #1, D6
-                    LSL.W   #8, D6
-                    OR.W    D6, D7
+                    MOVE.L  #1, D6
                     
-                    * Opcode Size
-                    MOVE.W  D4, D6
-                    LSL.W   #6, D6
-                    OR.W    D6, D7
-                    
-                    * Opcode Code
-                    OR.W    D5, D7
-                    
-                    * Put the opcode information back on the stack.
-                    MOVE.W  D7, -(SP)   ; Put the opcode information on the stack.
-                    MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
-                    RTS
+                    BRA     OC_CREATE_RETVAL
                     
 SET_Bcc_OC          CMPI.B  #BRA_CC, D4
                     BEQ     SET_BRA_OC
@@ -910,8 +943,7 @@ PROCESS_ADDA_OC     JSR     SET_ADDA_OC_SIZE
                     
                     MOVE.B  #TBL_MASK_ADD_SRC, D3
                     MOVE.B  #TBL_MASK_ADDR_REG, D4
-                    MOVE.B  #ADD_OC_CODE, D5
-                    MOVE.B  #OC_SUFFIX_A, D6
+                    MOVE.B  #ADDA_OC_CODE, D5
                     
                     BRA     OC_TWO_EA
 
@@ -965,7 +997,6 @@ PROCESS_ADD_OC_SRC  * Size
                     MOVE.B  #TBL_MASK_ADD_SRC, D3
                     MOVE.B  #TBL_MASK_DATA_REG, D4
                     MOVE.B  #ADD_OC_CODE, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
 
                     BRA     OC_TWO_EA
 
@@ -1005,7 +1036,6 @@ PROCESS_ADD_OC_DST  * Size
                     MOVE.B  #TBL_MASK_DATA_REG, D3
                     MOVE.B  #TBL_MASK_ADD_DST, D4
                     MOVE.B  #ADD_OC_CODE, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
 
                     BRA     OC_TWO_EA
 
@@ -1518,9 +1548,8 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     * Destination Register
                     * There is no destination register.
                     
-                    MOVE.B  #TBL_MASK_JSR, D2
+                    MOVE.B  #TBL_MASK_JSR, D3
                     MOVE.B  #JSR_OC_CODE, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
                     
                     BRA     OC_ONE_EA
 
@@ -1785,7 +1814,7 @@ PROCESS_RTS_OC      MOVE.L  (SP)+, D0
                     CLR     D2
                     CLR     D3
                     
-                    MOVE.B  #RTS_OC_CODE, D3
+                    MOVE.B  #RTS_OC_CODE, D5
                     
                     BRA     OC_NO_EA
                     
@@ -2704,6 +2733,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
