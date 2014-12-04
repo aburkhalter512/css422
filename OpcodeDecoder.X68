@@ -8,6 +8,7 @@ ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
 AND_INSTR           EQU     $C63C0055           ; AND.W #%01010101, D3
 BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
                                                 ; BRA.W 4 (equivalent since it's a word displacement)
+BEQ_INSTR           EQU     $6700031E
 CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
 CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
 CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
@@ -37,6 +38,12 @@ OC_SUFFIX_L         EQU     $3
 
 START_ADDRESS       EQU     $4000
 ERROR_MASK          EQU     %10000000
+
+BRA_CC              EQU     %0000
+BHI_CC              EQU     %0010
+BNE_CC              EQU     %0110
+BEQ_CC              EQU     %0111
+BLT_CC              EQU     %1101
 
 ;=================== Opcode Signatures ========================================
 ADD_OC              EQU     $D000
@@ -81,11 +88,11 @@ ADDQ_OC_CODE        EQU     $02
 AND_OC_CODE         EQU     $03
 ASL_OC_CODE         EQU     $04
 ASR_OC_CODE         EQU     $05
-BEQ_OC_CODE         EQU     $06
-BNE_OC_CODE         EQU     $07
-BLT_OC_CODE         EQU     $08
-BHI_OC_CODE         EQU     $09
-BRA_OC_CODE         EQU     $0A
+BRA_OC_CODE         EQU     $06
+BHI_OC_CODE         EQU     $07
+BNE_OC_CODE         EQU     $08
+BEQ_OC_CODE         EQU     $09
+BLT_OC_CODE         EQU     $0A
 BTST_OC_CODE        EQU     $0B
 CMP_OC_CODE         EQU     $0C
 CMPA_OC_CODE        EQU     $0D
@@ -186,7 +193,7 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    MOVE.L  #BRA_INSTR, (A6)
+                    MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.W  #ADDQ_INSTR, (A6)  ; BROKEN!!!!!!!!!!!!!!!!!
                     *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
@@ -195,6 +202,8 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
+                    
+                    BEQ     INVALID_OC
                     
                     JSR     PROCESS_OC
                     
@@ -551,9 +560,27 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 *------------------------------------------------------------------------------
 * PROCESS_Bcc_OC
 *------------------------------------------------------------------------------
-* This subroutine assumes the following:
+* Processes conditional branching instructions and BRA (see assumptions below).
+* 
+* This branch supports the following instructions (in order of code):
 *
-* 1. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
+*   * BRA (0000)
+*   * BHI (0010)
+*   * BNE (0110)
+*   * BEQ (0111)
+*   * BLT (1101)
+*
+* This branch assumes the following:
+*
+* 1. The condition codes (page 90 of the manual) state that code 0000 is mapped
+*    to T* (true condition). Since our disassembler isn't dealing with that
+*    condition, and since BRA shares the same exact signature at Bcc
+*    instructions (except the fact that 0000 is in the place of the condition
+*    bits), we're going to assume 0000 maps to BRA. It is understood that BRA
+*    is not a conditional branch, but in this case we are going to assume it is
+*    to make the implementation easier.
+* 2. It's obvious at this point, but not all Bcc instructions are supported.
+* 3. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
 *------------------------------------------------------------------------------
 PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     CLR     D0
@@ -561,42 +588,21 @@ PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     CLR     D2
                     CLR     D3
                     
+                    * Condition Code
+                    MOVE.W  (A2), D4
+                    LSL.W   #4, D4
+                    LSR.W   #8, D4
+                    LSR.W   #4, D4
+                    
+                    JSR     SET_Bcc_OC
+                    
                     * Byte Displacement
                     MOVE.W  (A2), D3
                     LSL.W   #8, D3
                     LSR.W   #8, D3
                     
-                    CMPI.B  #0, D3
-                    BEQ     PROCESS_Bcc_OC_WD
-                    BRA     PROCESS_Bcc_OC_BD
+                    JSR     PREPROCESS_Bcc
 
-PROCESS_Bcc_OC_BD   * Size
-                    MOVE.B  #OC_BYTE_SIZE, D0
-                    
-                    MOVE.W  A2, D2
-                    ADDI.B  #2, D2
-                    ADD.B   D3, D2
-                    
-                    RTS
-                    
-PROCESS_Bcc_OC_WD   * Size
-                    MOVE.B  #OC_WORD_SIZE, D0
-                    MOVE.B  D0, D1
-                    LSL.B   #3, D1
-                    
-                    * Branching Address
-                    MOVE.W  A2, D2
-                    ADDI.B  #2, D2
-                    
-                    * Word Displacement
-                    MOVE.W  A2, D3
-                    ADDI.B  #2, D3
-                    MOVE.W  D3, A6
-                    MOVE.W  (A6), D3
-                    
-                    * Destination Address
-                    ADD.W   D3, D2
-                    
                     * Source Mode
                     MOVE.B  #%111, D3
                     LSL.B   #5, D3
@@ -612,9 +618,8 @@ PROCESS_Bcc_OC_WD   * Size
                     * Destination Register
                     * There is no destination register.
                     
-                    *---
                     MOVE.B  D0, -(SP)               ; Put the opcode size on the stack.
-                    MOVE.B  #BRA_OC_CODE, -(SP)     ; Put the opcode code on the stack.
+                    MOVE.B  D5, -(SP)               ; Put the opcode code on the stack.
                     
                     MOVE.L  A2, -(SP)               ; Put the current instruction address on the stack.
                     MOVE.L  D2, -(SP)               ; Put the branching address on the stack.
@@ -676,6 +681,68 @@ PROCESS_Bcc_OC_WD   * Size
                     MOVE.W  D7, -(SP)   ; Put the opcode information on the stack.
                     MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
+                    
+SET_Bcc_OC          CMPI.B  #BRA_CC, D4
+                    BEQ     SET_BRA_OC
+                    
+                    CMPI.B  #BHI_CC, D4
+                    BEQ     SET_BHI_OC
+                    
+                    CMPI.B  #BNE_CC, D4
+                    BEQ     SET_BNE_OC
+                    
+                    CMPI.B  #BEQ_CC, D4
+                    BEQ     SET_BEQ_OC
+                    
+                    CMPI.B  #BLT_CC, D4
+                    BEQ     SET_BLT_OC
+                    
+                    BRA     INVALID_OC
+
+SET_BRA_OC          MOVE.B  #BRA_OC_CODE, D5
+                    RTS
+
+SET_BHI_OC          MOVE.B  #BHI_OC_CODE, D5
+                    RTS
+
+SET_BNE_OC          MOVE.B  #BNE_OC_CODE, D5
+                    RTS
+
+SET_BEQ_OC          MOVE.B  #BEQ_OC_CODE, D5
+                    RTS
+
+SET_BLT_OC          MOVE.B  #BLT_OC_CODE, D5
+                    RTS
+
+PREPROCESS_Bcc      * Branching Address
+                    MOVE.L  A2, D2
+                    ADDI.B  #2, D2
+
+                    CMPI.B  #0, D3
+                    BEQ     PREPROCESS_Bcc_WORD
+                    BRA     PREPROCESS_Bcc_BYTE
+
+PREPROCESS_Bcc_BYTE * Size
+                    MOVE.B  #OC_BYTE_SIZE, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    
+                    * Destination Address
+                    ADD.B   D3, D2
+                    
+                    RTS
+                    
+PREPROCESS_Bcc_WORD * Size
+                    MOVE.B  #OC_WORD_SIZE, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    
+                    * Word Displacement
+                    MOVE.L  D2, A6
+                    MOVE.W  (A6), D3
+                    
+                    * Destination Address
+                    ADD.W   D3, D2
                     
                     RTS
 
@@ -2637,6 +2704,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
