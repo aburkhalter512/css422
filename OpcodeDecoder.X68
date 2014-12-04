@@ -1,5 +1,3 @@
-ae fdhfbajfajksfaksfbasjb
-
 START               ORG		$1000
 
 START_ADDRESS       EQU     $4000
@@ -2368,6 +2366,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
