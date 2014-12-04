@@ -94,9 +94,6 @@ SUB_OC_MASK         EQU     $F000
 SUBI_OC             EQU     $0400
 SUBI_OC_MASK        EQU     $FF00
 
-LF                  EQU     $0A
-CR                  EQU     $0D
-
 ;=================== Effective Address Modes ==================================
 EA_MODE_DATA_REG    EQU    %00000000   ;Dn
 EA_MODE_ADDR_REG    EQU    %00000001   ;An
@@ -167,6 +164,35 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 
 * JSR Mask
 TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
+
+*--------I/O MODULE--------
+IOLOOP
+
+*------STACK DECODER-------
+* In Progress
+* Stack data, starting from $FE0000,
+* and store current data at A6,
+* Data will be stacked down.
+
+SSTACK	EQU		$FE0000
+		MOVEA.L	#SSTACK,A6
+		MOVE.B	#$3F,(A6)+	* TEST
+*---STRING STACK DECODER---
+		MOVEA.L	#SSTACK,A5
+SSD		CMPA.L	A5,A6
+		BEQ		IOLOOP
+
+
+
+		MOVE.B	(A5)+,D7
+		MULU.W	#12,D7
+		ROL.L	#8,D7
+		ROL.L	#8,D7
+		MOVE.B	#$FD,D7
+		ROR.L	#8,D7
+		ROR.L	#8,D7
+		MOVE.L	D7,A4
+		JMP		(A4)
 
 * =============================================================================
 * ================== Begin Program ============================================
@@ -2351,7 +2377,228 @@ GET_EA_OVERFLOW 	MOVE.B #ERR_STACK_OVERFLOW, -(SP)   ;Load the error constant
 * ================== End Program ==============================================
 * =============================================================================
 
-;==================== String Literals =========================================
+;=================== String Literals ==========================================
+*------STRING PRINTER------
+		ORG		$FD0000
+*---------GROUP 0X---------
+		LEA		S00,A1
+		JMP		SPEM
+		LEA		S01,A1
+		JMP		SPEM
+		LEA		S02,A1
+		JMP		SPEM
+		LEA		S03,A1
+		JMP		SPEM
+		LEA		S04,A1
+		JMP		SPEM
+		LEA		S05,A1
+		JMP		SPEM
+		LEA		S06,A1
+		JMP		SPEM
+		LEA		S07,A1
+		JMP		SPEM
+		LEA		S08,A1
+		JMP		SPEM
+		LEA		S09,A1
+		JMP		SPEM
+		LEA		S0A,A1
+		JMP		SPEM
+		LEA		S0B,A1
+		JMP		SPEM
+		LEA		S0C,A1
+		JMP		SPEM
+		LEA		S0D,A1
+		JMP		SPEM
+		LEA		S0E,A1
+		JMP		SPEM
+		LEA		S0F,A1
+		JMP		SPEM
+		
+*---------GROUP 1X---------
+		LEA		S10,A1
+		JMP		SPEM
+		LEA		S11,A1
+		JMP		SPEM
+		LEA		S12,A1
+		JMP		SPEM
+		LEA		S13,A1
+		JMP		SPEM
+		LEA		S14,A1
+		JMP		SPEM
+		LEA		S15,A1
+		JMP		SPEM
+		LEA		S16,A1
+		JMP		SPEM
+		LEA		S17,A1
+		JMP		SPEM
+		LEA		S18,A1
+		JMP		SPEM
+		LEA		S19,A1
+		JMP		SPEM
+		LEA		S1A,A1
+		JMP		SPEM
+		LEA		S1B,A1
+		JMP		SPEM
+		LEA		S1C,A1
+		JMP		SPEM
+		LEA		S1D,A1
+		JMP		SPEM
+		LEA		S1E,A1
+		JMP		SPEM
+		LEA		S1F,A1
+		JMP		SPEM
+		
+*---------GROUP 2X---------
+		LEA		S20,A1
+		JMP		SPEM
+		LEA		S21,A1
+		JMP		SPEM
+		LEA		S22,A1
+		JMP		SPEM
+		LEA		S23,A1
+		JMP		SPEM
+		LEA		S24,A1
+		JMP		SPEM
+		LEA		S25,A1
+		JMP		SPEM
+		LEA		S26,A1
+		JMP		SPEM
+		LEA		S27,A1
+		JMP		SPEM
+		LEA		S28,A1
+		JMP		SPEM
+		LEA		S29,A1
+		JMP		SPEM
+		LEA		S2A,A1
+		JMP		SPEM
+		LEA		S2B,A1
+		JMP		SPEM
+		LEA		S2C,A1
+		JMP		SPEM
+		LEA		S2D,A1
+		JMP		SPEM
+		LEA		S2E,A1
+		JMP		SPEM
+		LEA		S2F,A1
+		JMP		SPEM
+		
+*---------GROUP 3X---------
+		LEA		S30,A1
+		JMP		SPEM
+		LEA		S31,A1
+		JMP		SPEM
+		LEA		S32,A1
+		JMP		SPEM
+		LEA		S33,A1
+		JMP		SPEM
+		LEA		S34,A1
+		JMP		SPEM
+		LEA		S35,A1
+		JMP		SPEM
+		LEA		S36,A1
+		JMP		SPEM
+		LEA		S37,A1
+		JMP		SPEM
+		LEA		S38,A1
+		JMP		SPEM
+		LEA		S39,A1
+		JMP		SPEM
+		LEA		S3A,A1
+		JMP		SPEM
+		LEA		S3B,A1
+		JMP		SPEM
+		LEA		S3C,A1
+		JMP		SPEM
+		LEA		S3D,A1
+		JMP		SPEM
+		LEA		S3E,A1
+		JMP		SPEM
+		LEA		S3F,A1
+		JMP		SPEM
+
+*---------GROUP SP---------
+		LEA		SFF,A1
+		JMP		SPEM
+		
+SPEM	MOVE.B	#14,D0
+		TRAP	#15
+		JMP		SSD
+*---------OP CODE----------
+S0A		DC.B	'MOVE',0
+S0B		DC.B	'CMP',0
+S0C		DC.B	'ADD',0
+S0D		DC.B	'SUB',0
+S0E		DC.B	'EOR',0
+S0F		DC.B	'OR',0
+S1A		DC.B	'LS',0
+S1B		DC.B	'RO',0
+S1C		DC.B	'BTST',0
+S1D		DC.B	'NEG',0
+S1E		DC.B	'NOT',0
+S1F		DC.B	'AND',0
+S2A		DC.B	'BRA ',0
+S2B		DC.B	'JSR',0
+S2C		DC.B	'RTS',0
+S2D		DC.B	'LEA',0
+S2E		DC.B	'DIVS',0
+S2F		DC.B	'MULS',0
+S3A		DC.B	'MOVEM,0'
+S3B		DC.B	'ADDQ,0'
+S3C		DC.B	'ORI',0
+S3D		DC.B	'SUBI',0
+S3E		DC.B	'EORI',0
+S3F		DC.B	'CMPI',0
+*-----------BCC------------
+S03		DC.B	'BEQ ',0
+S04		DC.B	'BNE ',0
+S05		DC.B	'BLT ',0
+S06		DC.B	'BHI ',0
+*--------OP Suffix---------
+S07		DC.B	'A',0
+S08		DC.B	'R',0
+S09		DC.B	'L',0
+*-----------Size-----------
+S00		DC.B	'.B ',0
+S01		DC.B	'.W ',0
+S02		DC.B	'.L ',0
+*------Data Register-------
+S10		DC.B	'D0',0
+S11		DC.B	'D1',0
+S12		DC.B	'D2',0
+S13		DC.B	'D3',0
+S14		DC.B	'D4',0
+S15		DC.B	'D5',0
+S16		DC.B	'D6',0
+S17		DC.B	'D7',0
+S20		DC.B	'A0',0
+S21		DC.B	'A1',0
+S22		DC.B	'A2',0
+S23		DC.B	'A3',0
+S24		DC.B	'A4',0
+S25		DC.B	'A5',0
+S26		DC.B	'A6',0
+S27		DC.B	'A7',0
+*-------Data Handler-------
+S32		DC.B	'#',0
+S33		DC.B	'#$',0
+S34		DC.B	'(',0
+S35		DC.B	'-(',0
+S36		DC.B	')',0
+S37		DC.B	')+',0
+S38		DC.B	'/',0
+S39		DC.B	',',0
+*---------Special---------
+SFF		DC.B	CR,LF,0	
+*---------Reserved--------
+S18		DC.B	'',0
+S19		DC.B	'',0
+S28		DC.B	'',0
+S29		DC.B	'',0
+S30		DC.B	'',0
+S31		DC.B	'',0
+*---------AUX STR---------
+CR		EQU		$0D				* ASCII for Carriage Return
+LF		EQU		$0A				* ASCII for Line Feed
 
 ;=================== Test Data ================================================
 TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
@@ -2366,6 +2613,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
