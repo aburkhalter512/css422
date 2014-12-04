@@ -1,12 +1,6 @@
 START               ORG		$1000
 
-START_ADDRESS       EQU     $4000
-
-ERROR_MASK          EQU     %10000000
-
-*----------------------------------------
-* Opcode Decoder Test Instructions
-*----------------------------------------
+;=================== Opcode Decoder Test Instructions =========================
 ADD_INSTR           EQU     $D2385000           ; ADD.B $5000, D1
 ADD_INSTR_2         EQU     $D3385000           ; ADD.B D1, $5000
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
@@ -30,6 +24,7 @@ RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
 INVALID_INSTR       EQU     $FFFF
 
+;=================== Opcode Decoder Constants =================================
 OC_NO_SIZE          EQU     $0
 OC_BYTE_SIZE        EQU     $1
 OC_WORD_SIZE        EQU     $2
@@ -40,59 +35,81 @@ OC_SUFFIX_A         EQU     $1
 OC_SUFFIX_R         EQU     $2
 OC_SUFFIX_L         EQU     $3
 
+START_ADDRESS       EQU     $4000
+ERROR_MASK          EQU     %10000000
+
+;=================== Opcode Signatures ========================================
 ADD_OC              EQU     $D000
-ADD_OC_MASK         EQU     $F000
-ADD_OC_SS           EQU     $0C
-ADDQ_OC_SS          EQU     $3B
-
 ADDQ_OC             EQU     $5000
-ADDQ_OC_MASK        EQU     $F100
-
 AND_OC              EQU     $C000
-AND_OC_MASK         EQU     $F000
-
-BRA_OC              EQU     $6000
-BRA_OC_MASK         EQU     $FF00
-BRA_OC_CODE         EQU     $A
-
+Bcc_OC              EQU     $6000
 CMP_EOR_OC          EQU     $B000
-CMP_EOR_OC_MASK     EQU     $F000
-
 CMPI_OC             EQU     $0C00
-CMPI_OC_MASK        EQU     $FF00
-
 DIVS_OC             EQU     $81C0
-DIVS_OC_MASK        EQU     $F1C0
-
 EORI_OC             EQU     $0A00
-EORI_OC_MASK        EQU     $FF00
-
 JSR_OC              EQU     $4E80
-JSR_OC_MASK         EQU     $FF80
-JSR_OC_SS           EQU     $2B
-
 LEA_OC              EQU     $41C0
-LEA_OC_MASK         EQU     $F1C0
-
 MOVE_OC             EQU     $0000
-MOVE_OC_MASK        EQU     $C000
-MOVE_OC_SS          EQU     $0A
-
 MULS_OC             EQU     $C1C0
-MULS_OC_MASK        EQU     $F1C0
-
 ORI_OC              EQU     $0000
-ORI_OC_MASK         EQU     $FF00
-
 RTS_OC              EQU     $4E75
-RTS_OC_MASK         EQU     $FFFF
-RTS_OC_SS           EQU     $2C
-
 SUB_OC              EQU     $9000
-SUB_OC_MASK         EQU     $F000
-
 SUBI_OC             EQU     $0400
+
+;=================== Opcode Masks =============================================
+ADD_OC_MASK         EQU     $F000
+ADDQ_OC_MASK        EQU     $F100
+AND_OC_MASK         EQU     $F000
+Bcc_OC_MASK         EQU     $F000
+CMP_EOR_OC_MASK     EQU     $F000
+CMPI_OC_MASK        EQU     $FF00
+DIVS_OC_MASK        EQU     $F1C0
+EORI_OC_MASK        EQU     $FF00
+JSR_OC_MASK         EQU     $FF80
+LEA_OC_MASK         EQU     $F1C0
+MOVE_OC_MASK        EQU     $C000
+MULS_OC_MASK        EQU     $F1C0
+ORI_OC_MASK         EQU     $FF00
+RTS_OC_MASK         EQU     $FFFF
+SUB_OC_MASK         EQU     $F000
 SUBI_OC_MASK        EQU     $FF00
+
+;=================== Terry's Opcode Codes =====================================
+ADD_OC_CODE         EQU     $00
+ADDA_OC_CODE        EQU     $01
+ADDQ_OC_CODE        EQU     $02
+AND_OC_CODE         EQU     $03
+ASL_OC_CODE         EQU     $04
+ASR_OC_CODE         EQU     $05
+BEQ_OC_CODE         EQU     $06
+BNE_OC_CODE         EQU     $07
+BLT_OC_CODE         EQU     $08
+BHI_OC_CODE         EQU     $09
+BRA_OC_CODE         EQU     $0A
+BTST_OC_CODE        EQU     $0B
+CMP_OC_CODE         EQU     $0C
+CMPA_OC_CODE        EQU     $0D
+CMPI_OC_CODE        EQU     $0E
+DIVS_OC_CODE        EQU     $0F
+EOR_OC_CODE         EQU     $10
+EORI_OC_CODE        EQU     $11
+JSR_OC_CODE         EQU     $12
+LEA_OC_CODE         EQU     $13
+LSL_OC_CODE         EQU     $14
+LSR_OC_CODE         EQU     $15
+MOVE_OC_CODE        EQU     $16
+MOVEA_OC_CODE       EQU     $17
+MOVEM_OC_CODE       EQU     $18
+MULS_OC_CODE        EQU     $19
+NEG_OC_CODE         EQU     $1A
+NOT_OC_CODE         EQU     $1B
+ORI_OC_CODE         EQU     $1C
+ROL_OC_CODE         EQU     $1D
+ROR_OC_CODE         EQU     $1E
+RTS_OC_CODE         EQU     $1F
+SUB_OC_CODE         EQU     $20
+SUBA_OC_CODE        EQU     $21
+SUBI_OC_CODE        EQU     $22
 
 ;=================== Effective Address Modes ==================================
 EA_MODE_DATA_REG    EQU    %00000000   ;Dn
@@ -165,6 +182,25 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * JSR Mask
 TBL_MASK_JSR        EQU     %01100100 ;Allow only controlled addressing modes
 
+* =============================================================================
+* ================== Begin Program ============================================
+* =============================================================================
+                    MOVEA.W #START_ADDRESS, A6
+                    MOVE.L  #BRA_INSTR, (A6)
+                    *MOVE.W  #ADDQ_INSTR, (A6)  ; BROKEN!!!!!!!!!!!!!!!!!
+                    *MOVE.W  #MOVE_INSTR, (A6)
+                    *MOVE.W  #RTS_INSTR, (A6)
+                    *MOVE.W  #JSR_INSTR_OC, (A6)+
+                    *MOVE.L  #JSR_INSTR_DATA, (A6)
+                    
+                    MOVEA.W #START_ADDRESS, A2
+                    MOVEA.W A2, A3
+                    
+                    JSR     PROCESS_OC
+                    
+                    MOVE.B  #9, D0
+                    TRAP    #15
+
 *--------I/O MODULE--------
 IOLOOP
 
@@ -194,25 +230,6 @@ SSD		CMPA.L	A5,A6
 		MOVE.L	D7,A4
 		JMP		(A4)
 
-* =============================================================================
-* ================== Begin Program ============================================
-* =============================================================================
-                    MOVEA.W #START_ADDRESS, A6
-                    MOVE.L  #BRA_INSTR, (A6)
-                    *MOVE.W  #ADDQ_INSTR, (A6)  ; BROKEN!!!!!!!!!!!!!!!!!
-                    *MOVE.W  #MOVE_INSTR, (A6)
-                    *MOVE.W  #RTS_INSTR, (A6)
-                    *MOVE.W  #JSR_INSTR_OC, (A6)+
-                    *MOVE.L  #JSR_INSTR_DATA, (A6)
-                    
-                    MOVEA.W #START_ADDRESS, A2
-                    MOVEA.W A2, A3
-                    
-                    JSR     PROCESS_OC
-                    
-                    MOVE.B  #9, D0
-                    TRAP    #15
-
 OC_ERROR     
 
 OC_CHECK_ERROR      MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
@@ -229,57 +246,57 @@ OC_CHECK_ERROR      MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
                     MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XFS_BYTE: Transfer from Stack (Byte Data)
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XFS_BYTE         MOVE.L  (SP)+, A6
                     MOVE.B  (SP)+, D7
                     MOVE.L  A6, -(SP)
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XFS_WORD: Transfer from Stack (Word Data)
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XFS_WORD         MOVE.L  (SP)+, A6
                     MOVE.W  (SP)+, D7
                     MOVE.L  A6, -(SP)
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XFS_LONG: Transfer from Stack (Long Data)
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XFS_LONG         MOVE.L  (SP)+, A6
                     MOVE.L  (SP)+, D7
                     MOVE.L  A6, -(SP)
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XTS_BYTE: Transfer to Stack (Byte Data)
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XTS_BYTE         MOVE.L  (SP)+, A6
                     MOVE.B  D7, -(SP)
                     MOVE.L  A6, -(SP)
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XTS_WORD: Transfer to Stack (Word Data)
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XTS_WORD         MOVE.L  (SP)+, A6
                     MOVE.W  D7, -(SP)
                     MOVE.L  A6, -(SP)
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XTS_LONG: Transfer to Stack (Long Data)
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XTS_LONG         MOVE.L  (SP)+, A6
                     MOVE.L  D7, -(SP)
                     MOVE.L  A6, -(SP)
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XDFS: Transfer Data from Stack
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XDFS             CMPI.B  #1, D0
                     BEQ     OC_XFS_BYTE
                     
@@ -291,9 +308,9 @@ OC_XDFS             CMPI.B  #1, D0
                     
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_XDFS: Transfer Data to Stack
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_XDTS             CMPI.B  #1, D0
                     BEQ     OC_XTS_BYTE
                     
@@ -305,22 +322,22 @@ OC_XDTS             CMPI.B  #1, D0
                     
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_NO_EA
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * This subroutine assumes the following:
 *
 * 1. D3 contains the Opcode string stack code.
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_NO_EA            MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
                     MOVE.B  #0, -(SP)   ; There is no size, suffix, or EA, so ocInfo is 0x0.
                     MOVE.B  D3, -(SP)   ; Put the Opcode string stack code on the stack.
                     MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_ONE_EA
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * This subroutine assumes the following:
 *
 * 1. D0 contains the size of the operation. 00 for no size, 01 for byte, 10 for word, 11 for long.
@@ -329,7 +346,7 @@ OC_NO_EA            MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
 * 4. D5 contains the Opcode string stack code.
 * 5. D6 contains the Opcode suffix. 00 for none, 01 for for A, 10 for R, and 11 for L.
 * 6. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  D5, -(SP)   ; Put the Opcode string stack code on the stack.
                     MOVE.B  D6, -(SP)   ; Put the Opcode suffix on the stack.
@@ -385,9 +402,9 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * OC_TWO_EA
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * This subroutine assumes the following:
 *
 * 1. D0 contains the size of the operation. 00 for no size, 01 for byte, 10 for word, 11 for long.
@@ -399,7 +416,7 @@ OC_ONE_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 * 7. D6 contains the Opcode suffix. 00 for none, 01 for for A, 10 for R, and 11 for L.
 * 8. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
 * 9. GET_DESTINATION_EA pop exactly 3 bytes off of the stack.
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  D5, -(SP)   ; Put the Opcode string stack code on the stack.
                     MOVE.B  D6, -(SP)   ; Put the Opcode suffix on the stack.
@@ -531,428 +548,14 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.L  A5, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
-* =============================================================================
-* PROCESS_OC
-*   This subroutine processes an instruction based off the word value located
-*   at A2 (current instruction). If an error is found (bad instruction or bad EA),
-*   then the error bit of the opcode return value will be set to 1. If no error
-*   is found, then two byte return values will be placed onto the stack from right
-*   to left indicating the opcode information. Additional data may follow the
-*   return values. The additional information will be supplied by GET_SOURCE_EA
-*   and/or GET_DESTINATION_EA, and will provide information about the source and
-*   destination effective addresses. If an error does happen to occur, then the
-*   stack will only contain one byte, where the most significant bit is 1. If no
-*   error occurs, then there will always be two bytes (plus additional EA data) to
-*   pop off the stack. The value of A2 and A3 are unchanged by this subroutine.
+*------------------------------------------------------------------------------
+* PROCESS_Bcc_OC
+*------------------------------------------------------------------------------
+* This subroutine assumes the following:
 *
-* + opcode: byte, ocInfo: byte, (additional data, see below)    PROCESS_OC(void)
-*   OR
-* + opcode: byte    PROCESS_OC(void)
-*
-* For Version 1
-*   Arguments:
-*       There are no direct arguments required. However, this subroutine requires
-*       at least one word of instruction to be at A2 (current instruction counter).
-*
-*   Return Values:
-*       opcode: byte
-*           This is a bit packed byte, storing two distinct pieces of information.
-*
-*           Bit 1 contains the error status. If the bit is 0, then there is no
-*           error. If the bit is 1, then there is an error.
-*
-*           Bit 2 will always be 0.
-*
-*           Bits 3-8 will contain the opcode. The value corresponds to the String
-*           Stack Decoder (SSD) table defined in the design document.
-*
-*           If there is no error, then the byte can be interpreted as the SSD
-*           opcode value since bits 1-2 will be 0.
-*
-*       ocInfo: byte
-*           This is a bit packed byte, storing 3 distinct pieces of information.
-*
-*           Bits 1 and 2 contain the opcode size.
-*           00 for byte, 01 for word, and 11 for long-word.
-*
-*           Bits 3 and 4 contain the opcode suffix.
-*           00 for no suffix, 01 for A, 10 for L, and 11 for R.
-*
-*           Bits 5 and 6 will always be 0.
-*
-*           Bits 7 and 8 contain the number of effective addresses for the instruction.
-*           00 for no EAs, 01 for 1 EAs, and 10 for 2 EAs. If there are EAs, then pelase
-*           refer to the additional information below.
-*
-*       (additional data):
-*           If there are EAs, then there will be additional data on the stack.
-*           The data is generated by GET_SOURCE_EA and GET_DESTINATION_EA. Please refer
-*           to the documentation for those subroutines for information regarding the
-*           format of the data. If there are two EAs, then the information will be
-*           ordered by source EA followed by the destination EA.
-*
-*           For example, if the instruction requires two EAs, then the stack will look
-*           like the following: [opcode] [ocInfo] [source EA] [destination EA].
-*           The information is ordered right to left, meaning that [opcode] is the first
-*           thing that will be popped off the stack.
-*
-*           In the event there is only one EA, then the stack will have the same exact
-*           state as if there were two EAs, but the information for the destination will
-*           obviously not be there.
-*
-* For Version 2
-*   Arguments:
-*       There are no direct arguments required. However, this subroutine requires
-*       at least one word of instruction to be at A2 (current instruction counter).
-*
-*   Return Values:
-*       opcode: byte
-*           The most significant bit will be 1 indicating an error. No other information
-*           will be on the stack (clean).
-* =============================================================================      
-PROCESS_OC          JSR     CHECK_ADD_OC
-                    JSR     CHECK_ADDQ_OC
-                    JSR     CHECK_BRA_OC
-                    JSR     CHECK_MULS_OC
-                    JSR     CHECK_AND_OC
-                    JSR     CHECK_CMP_EOR_OC
-                    JSR     CHECK_CMPI_OC
-                    JSR     CHECK_DIVS_OC
-                    JSR     CHECK_EORI_OC
-                    JSR     CHECK_JSR_OC
-                    JSR     CHECK_LEA_OC
-                    JSR     CHECK_RTS_OC
-                    JSR     CHECK_ORI_OC
-                    JSR     CHECK_MOVE_OC
-                    BRA     INVALID_OC
-
-PROCESSED_OC        RTS
-INVALID_OC          RTS
-
-*--------------------------------------------------
-* ADD & ADDA
-*--------------------------------------------------
-CHECK_ADD_OC        MOVE.W  (A2), D0
-                    AND.W   #ADD_OC_MASK, D0
-                    CMP.W   #ADD_OC, D0
-                    BEQ     PROCESS_ADD_OC
-                    RTS
-
-PROCESS_ADD_OC      MOVE.L  (SP)+, D0
-                    CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
-                    
-                    * Opmode
-                    MOVE.W  (A2), D0
-                    LSL.W   #7, D0
-                    LSR.W   #8, D0
-                    LSR.W   #5, D0
-                    
-                    CMPI.B  #7, D0
-                    BEQ     PROCESS_ADDA_OC
-                    
-                    CMPI.B  #3, D0
-                    BEQ     PROCESS_ADDA_OC
-                    BLT     PROCESS_ADD_OC_SRC
-                    BGT     PROCESS_ADD_OC_DST
-
-PROCESS_ADDA_OC     JSR     SET_ADDA_OC_SIZE
-
-                    MOVE.B  D0, D1
-                    LSL.B   #3, D1
-                    MOVE.B  D1, D2
-
-                    * Source Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Source Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Destination Mode
-                    MOVE.B  #1, D3
-                    LSL.B   #5, D3
-                    OR.B    D3, D2
-
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #4, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    MOVE.B  #TBL_MASK_ADD_SRC, D3
-                    MOVE.B  #TBL_MASK_ADDR_REG, D4
-                    MOVE.B  #ADD_OC_SS, D5
-                    MOVE.B  #OC_SUFFIX_A, D6
-                    
-                    BRA     OC_TWO_EA
-
-SET_ADDA_OC_SIZE    CMPI.B  #3, D0
-                    BEQ     SET_ADDA_SIZE_WORD
-                    
-                    CMPI.B  #7, D0
-                    BEQ     SET_ADDA_SIZE_LONG
-                    
-                    BRA     INVALID_OC
-
-SET_ADDA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
-                    RTS
-
-SET_ADDA_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
-                    RTS
-
-PROCESS_ADD_OC_SRC  * Size
-                    ADDI.B  #1, D0
-                    MOVE.B  D0, D1
-                    LSL.B   #3, D1
-                    MOVE.B  D1, D2
-                    
-                    * Source Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Source Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Destination Mode
-                    * Not needed since mode is 000.
-
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #4, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    MOVE.B  #TBL_MASK_ADD_SRC, D3
-                    MOVE.B  #TBL_MASK_DATA_REG, D4
-                    MOVE.B  #ADD_OC_SS, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
-
-                    BRA     OC_TWO_EA
-
-PROCESS_ADD_OC_DST  * Size
-                    SUBI.B  #3, D0
-                    MOVE.B  D0, D1
-                    LSL.B   #3, D1
-                    MOVE.B  D1, D2
-                    
-                    * Source Mode
-                    * Not needed since mode is 000.
-                    
-                    * Source Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #4, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #8, D3
-                    OR.B    D3, D2
-                    
-                    * Destination Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    MOVE.B  #TBL_MASK_DATA_REG, D3
-                    MOVE.B  #TBL_MASK_ADD_DST, D4
-                    MOVE.B  #ADD_OC_SS, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
-
-                    BRA     OC_TWO_EA
-
-*--------------------------------------------------
-* ADDQ
-*--------------------------------------------------
-CHECK_ADDQ_OC       MOVE.W  (A2), D0
-                    AND.W   #ADDQ_OC_MASK, D0
-                    CMP.W   #ADDQ_OC, D0
-                    BEQ     PROCESS_ADDQ_OC
-                    RTS
-
-PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
-                    CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
-                    
-                    * Size
-                    MOVE.W  (A2), D0
-                    LSL.W   #8, D0
-                    LSR.W   #8, D0
-                    LSR.W   #6, D0
-                    ADDI.W  #1, D0
-                    MOVE.B  D0, D1
-                    LSL.W   #3, D1
-                    MOVE.B  D1, D2
-                    
-                    * Data
-                    MOVE.W  (A2), D3
-                    LSL.W   #4, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    
-                    * Destination Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    MOVE.B  #TBL_MASK_DATA, D3
-                    MOVE.B  #TBL_MASK_ADDQ_DST, D4
-                    MOVE.B  #ADDQ_OC_SS, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
-                    
-                    BRA     OC_TWO_EA
-
-*----------------------------------------------------
-* AND
-*----------------------------------------------------
-CHECK_AND_OC        MOVE.W  (A2), D0
-                    AND.W   #AND_OC_MASK, D0
-                    CMP.W   #AND_OC, D0
-                    BEQ     PROCESS_AND_OC
-                    RTS
-
-PROCESS_AND_OC      MOVE.L  (SP)+, D0
-                    CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
-                    
-                    * Opmode
-                    MOVE.W  (A2), D0
-                    LSL.W   #7, D0
-                    LSR.W   #8, D0
-                    LSR.W   #5, D0
-                    
-                    CMPI.B  #7, D0
-                    BEQ     INVALID_OC
-                    
-                    CMPI.B  #3, D0
-                    BLT     PROCESS_AND_OC_SRC
-                    BGT     PROCESS_AND_OC_DST
-                    BRA     INVALID_OC
-
-PROCESS_AND_OC_SRC  MOVE.B  D0, D1
-                    ADDI.B  #1, D1
-                    LSL.B   #3, D1
-                    
-                    * Source Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Source Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Destination Mode
-                    * Not needed since mode is 000.
-                    
-                    * Destination Register
-                    MOVE.W  (A2), D2
-                    LSL.W   #4, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
-                    
-                    BRA     PROCESSED_OC
-
-PROCESS_AND_OC_DST  SUBI.B  #4, D0
-                    MOVE.B  D0, D2
-                    ADDI.B  #1, D2
-                    LSL.B   #3, D2
-                    
-                    * Source Mode
-                    * Not needed since mode is 000.
-
-                    * Source Register
-                    MOVE.W  (A2), D1
-                    LSL.W   #4, D1
-                    LSR.W   #8, D1
-                    LSR.W   #5, D1
-
-                    * Destination Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    BRA     PROCESSED_OC
-
-*--------------------------------------------------
-* BRA
-*--------------------------------------------------
-CHECK_BRA_OC        MOVE.W  (A2), D0
-                    AND.W   #BRA_OC_MASK, D0
-                    CMP.W   #BRA_OC, D0
-                    BEQ     PROCESS_BRA_OC
-                    RTS
-
-PROCESS_BRA_OC      MOVE.L  (SP)+, D0
+* 1. GET_SOURCE_EA pops exactly 2 bytes off of the stack.
+*------------------------------------------------------------------------------
+PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     CLR     D0
                     CLR     D1
                     CLR     D2
@@ -964,10 +567,10 @@ PROCESS_BRA_OC      MOVE.L  (SP)+, D0
                     LSR.W   #8, D3
                     
                     CMPI.B  #0, D3
-                    BEQ     PROCESS_BRA_OC_WD
-                    BRA     PROCESS_BRA_OC_BD
+                    BEQ     PROCESS_Bcc_OC_WD
+                    BRA     PROCESS_Bcc_OC_BD
 
-PROCESS_BRA_OC_BD   * Size
+PROCESS_Bcc_OC_BD   * Size
                     MOVE.B  #OC_BYTE_SIZE, D0
                     
                     MOVE.W  A2, D2
@@ -976,7 +579,7 @@ PROCESS_BRA_OC_BD   * Size
                     
                     RTS
                     
-PROCESS_BRA_OC_WD   * Size
+PROCESS_Bcc_OC_WD   * Size
                     MOVE.B  #OC_WORD_SIZE, D0
                     MOVE.B  D0, D1
                     LSL.B   #3, D1
@@ -1076,9 +679,430 @@ PROCESS_BRA_OC_WD   * Size
                     
                     RTS
 
-*----------------------------------------------------
+* =============================================================================
+* PROCESS_OC
+*   This subroutine processes an instruction based off the word value located
+*   at A2 (current instruction). If an error is found (bad instruction or bad EA),
+*   then the error bit of the opcode return value will be set to 1. If no error
+*   is found, then two byte return values will be placed onto the stack from right
+*   to left indicating the opcode information. Additional data may follow the
+*   return values. The additional information will be supplied by GET_SOURCE_EA
+*   and/or GET_DESTINATION_EA, and will provide information about the source and
+*   destination effective addresses. If an error does happen to occur, then the
+*   stack will only contain one byte, where the most significant bit is 1. If no
+*   error occurs, then there will always be two bytes (plus additional EA data) to
+*   pop off the stack. The value of A2 and A3 are unchanged by this subroutine.
+*
+* + opcode: byte, ocInfo: byte, (additional data, see below)    PROCESS_OC(void)
+*   OR
+* + opcode: byte    PROCESS_OC(void)
+*
+* For Version 1
+*   Arguments:
+*       There are no direct arguments required. However, this subroutine requires
+*       at least one word of instruction to be at A2 (current instruction counter).
+*
+*   Return Values:
+*       opcode: byte
+*           This is a bit packed byte, storing two distinct pieces of information.
+*
+*           Bit 1 contains the error status. If the bit is 0, then there is no
+*           error. If the bit is 1, then there is an error.
+*
+*           Bit 2 will always be 0.
+*
+*           Bits 3-8 will contain the opcode. The value corresponds to the String
+*           Stack Decoder (SSD) table defined in the design document.
+*
+*           If there is no error, then the byte can be interpreted as the SSD
+*           opcode value since bits 1-2 will be 0.
+*
+*       ocInfo: byte
+*           This is a bit packed byte, storing 3 distinct pieces of information.
+*
+*           Bits 1 and 2 contain the opcode size.
+*           00 for byte, 01 for word, and 11 for long-word.
+*
+*           Bits 3 and 4 contain the opcode suffix.
+*           00 for no suffix, 01 for A, 10 for L, and 11 for R.
+*
+*           Bits 5 and 6 will always be 0.
+*
+*           Bits 7 and 8 contain the number of effective addresses for the instruction.
+*           00 for no EAs, 01 for 1 EAs, and 10 for 2 EAs. If there are EAs, then pelase
+*           refer to the additional information below.
+*
+*       (additional data):
+*           If there are EAs, then there will be additional data on the stack.
+*           The data is generated by GET_SOURCE_EA and GET_DESTINATION_EA. Please refer
+*           to the documentation for those subroutines for information regarding the
+*           format of the data. If there are two EAs, then the information will be
+*           ordered by source EA followed by the destination EA.
+*
+*           For example, if the instruction requires two EAs, then the stack will look
+*           like the following: [opcode] [ocInfo] [source EA] [destination EA].
+*           The information is ordered right to left, meaning that [opcode] is the first
+*           thing that will be popped off the stack.
+*
+*           In the event there is only one EA, then the stack will have the same exact
+*           state as if there were two EAs, but the information for the destination will
+*           obviously not be there.
+*
+* For Version 2
+*   Arguments:
+*       There are no direct arguments required. However, this subroutine requires
+*       at least one word of instruction to be at A2 (current instruction counter).
+*
+*   Return Values:
+*       opcode: byte
+*           The most significant bit will be 1 indicating an error. No other information
+*           will be on the stack (clean).
+* =============================================================================      
+PROCESS_OC          JSR     CHECK_ADD_OC
+                    JSR     CHECK_ADDQ_OC
+                    JSR     CHECK_Bcc_OC
+                    JSR     CHECK_MULS_OC
+                    JSR     CHECK_AND_OC
+                    JSR     CHECK_CMP_EOR_OC
+                    JSR     CHECK_CMPI_OC
+                    JSR     CHECK_DIVS_OC
+                    JSR     CHECK_EORI_OC
+                    JSR     CHECK_JSR_OC
+                    JSR     CHECK_LEA_OC
+                    JSR     CHECK_RTS_OC
+                    JSR     CHECK_ORI_OC
+                    JSR     CHECK_MOVE_OC
+                    BRA     INVALID_OC
+
+PROCESSED_OC        RTS
+INVALID_OC          RTS
+
+*------------------------------------------------------------------------------
+* ADD & ADDA
+*------------------------------------------------------------------------------
+CHECK_ADD_OC        MOVE.W  (A2), D0
+                    AND.W   #ADD_OC_MASK, D0
+                    CMP.W   #ADD_OC, D0
+                    BEQ     PROCESS_ADD_OC
+                    RTS
+
+PROCESS_ADD_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Opmode
+                    MOVE.W  (A2), D0
+                    LSL.W   #7, D0
+                    LSR.W   #8, D0
+                    LSR.W   #5, D0
+                    
+                    CMPI.B  #7, D0
+                    BEQ     PROCESS_ADDA_OC
+                    
+                    CMPI.B  #3, D0
+                    BEQ     PROCESS_ADDA_OC
+                    BLT     PROCESS_ADD_OC_SRC
+                    BGT     PROCESS_ADD_OC_DST
+
+PROCESS_ADDA_OC     JSR     SET_ADDA_OC_SIZE
+
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.B  #1, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D2
+
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_ADD_SRC, D3
+                    MOVE.B  #TBL_MASK_ADDR_REG, D4
+                    MOVE.B  #ADD_OC_CODE, D5
+                    MOVE.B  #OC_SUFFIX_A, D6
+                    
+                    BRA     OC_TWO_EA
+
+SET_ADDA_OC_SIZE    CMPI.B  #3, D0
+                    BEQ     SET_ADDA_SIZE_WORD
+                    
+                    CMPI.B  #7, D0
+                    BEQ     SET_ADDA_SIZE_LONG
+                    
+                    BRA     INVALID_OC
+
+SET_ADDA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
+                    RTS
+
+SET_ADDA_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
+                    RTS
+
+PROCESS_ADD_OC_SRC  * Size
+                    ADDI.B  #1, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * Not needed since mode is 000.
+
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_ADD_SRC, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    MOVE.B  #ADD_OC_CODE, D5
+                    MOVE.B  #OC_SUFFIX_NONE, D6
+
+                    BRA     OC_TWO_EA
+
+PROCESS_ADD_OC_DST  * Size
+                    SUBI.B  #3, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #8, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_ADD_DST, D4
+                    MOVE.B  #ADD_OC_CODE, D5
+                    MOVE.B  #OC_SUFFIX_NONE, D6
+
+                    BRA     OC_TWO_EA
+
+*------------------------------------------------------------------------------
+* ADDQ
+*------------------------------------------------------------------------------
+CHECK_ADDQ_OC       MOVE.W  (A2), D0
+                    AND.W   #ADDQ_OC_MASK, D0
+                    CMP.W   #ADDQ_OC, D0
+                    BEQ     PROCESS_ADDQ_OC
+                    RTS
+
+PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    ADDI.W  #1, D0
+                    MOVE.B  D0, D1
+                    LSL.W   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Data
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_DATA, D3
+                    MOVE.B  #TBL_MASK_ADDQ_DST, D4
+                    MOVE.B  #ADDQ_OC_CODE, D5
+                    MOVE.B  #OC_SUFFIX_NONE, D6
+                    
+                    BRA     OC_TWO_EA
+
+*------------------------------------------------------------------------------
+* AND
+*------------------------------------------------------------------------------
+CHECK_AND_OC        MOVE.W  (A2), D0
+                    AND.W   #AND_OC_MASK, D0
+                    CMP.W   #AND_OC, D0
+                    BEQ     PROCESS_AND_OC
+                    RTS
+
+PROCESS_AND_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Opmode
+                    MOVE.W  (A2), D0
+                    LSL.W   #7, D0
+                    LSR.W   #8, D0
+                    LSR.W   #5, D0
+                    
+                    CMPI.B  #7, D0
+                    BEQ     INVALID_OC
+                    
+                    CMPI.B  #3, D0
+                    BLT     PROCESS_AND_OC_SRC
+                    BGT     PROCESS_AND_OC_DST
+                    BRA     INVALID_OC
+
+PROCESS_AND_OC_SRC  MOVE.B  D0, D1
+                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * Not needed since mode is 000.
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D2
+                    LSL.W   #4, D2
+                    LSR.W   #8, D2
+                    LSR.W   #5, D2
+                    
+                    BRA     PROCESSED_OC
+
+PROCESS_AND_OC_DST  SUBI.B  #4, D0
+                    MOVE.B  D0, D2
+                    ADDI.B  #1, D2
+                    LSL.B   #3, D2
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+
+                    * Source Register
+                    MOVE.W  (A2), D1
+                    LSL.W   #4, D1
+                    LSR.W   #8, D1
+                    LSR.W   #5, D1
+
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    BRA     PROCESSED_OC
+
+*------------------------------------------------------------------------------
+* Bcc (BEQ, BNE, BLT, BHI, BRA)
+*------------------------------------------------------------------------------
+CHECK_Bcc_OC        MOVE.W  (A2), D0
+                    AND.W   #Bcc_OC_MASK, D0
+                    CMP.W   #Bcc_OC, D0
+                    BEQ     PROCESS_Bcc_OC
+                    RTS
+
+*------------------------------------------------------------------------------
 * CMP, CMPA, and EOR
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_CMP_EOR_OC    MOVE.W  (A2), D0
                     AND.W   #CMP_EOR_OC_MASK, D0
                     CMP.W   #CMP_EOR_OC, D0
@@ -1228,9 +1252,9 @@ PROCESS_EOR_OC      SUBI.B  #4, D0
                     
                     BRA     PROCESSED_OC
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * CMPI
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_CMPI_OC       MOVE.W  (A2), D0
                     AND.W   #CMPI_OC_MASK, D0
                     CMP.W   #CMPI_OC, D0
@@ -1281,9 +1305,9 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     
                     BRA     PROCESSED_OC
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * DIVS
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_DIVS_OC       MOVE.W  (A2), D0
                     AND.W   #DIVS_OC_MASK, D0
                     CMP.W   #DIVS_OC, D0
@@ -1331,9 +1355,9 @@ PROCESS_DIVS_OC     MOVE.L  (SP)+, D0
                     
                     BRA     PROCESSED_OC
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * EORI
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_EORI_OC       MOVE.W  (A2), D0
                     AND.W   #EORI_OC_MASK, D0
                     CMP.W   #EORI_OC, D0
@@ -1384,9 +1408,9 @@ PROCESS_EORI_OC     MOVE.L  (SP)+, D0
                     
                     BRA     PROCESSED_OC
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * JSR
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_JSR_OC        MOVE.W  (A2), D0
                     AND.W   #JSR_OC_MASK, D0
                     CMP.W   #JSR_OC, D0
@@ -1428,14 +1452,14 @@ PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     * There is no destination register.
                     
                     MOVE.B  #TBL_MASK_JSR, D2
-                    MOVE.B  #JSR_OC_SS, D5
+                    MOVE.B  #JSR_OC_CODE, D5
                     MOVE.B  #OC_SUFFIX_NONE, D6
                     
                     BRA     OC_ONE_EA
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * LEA
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_LEA_OC        MOVE.W  (A2), D0
                     AND.W   #LEA_OC_MASK, D0
                     CMP.W   #LEA_OC, D0
@@ -1486,9 +1510,9 @@ PROCESS_LEA_OC      MOVE.L  (SP)+, D0
                     
                     BRA     PROCESSED_OC
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * MOVE
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_MOVE_OC       MOVE.W  (A2), D0                ; Create a copy of the current instruction.
                     AND.W   #MOVE_OC_MASK, D0       ; Apply the MOVE bit mask.
                     CMP.W   #MOVE_OC, D0            ; Check if the result of the bit mask application is a MOVE instruction.
@@ -1550,7 +1574,7 @@ PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from t
 
                     MOVE.B  #TBL_MASK_MOVE_SRC, D3
                     MOVE.B  #TBL_MASK_MOVE_DST, D4
-                    MOVE.B  #MOVE_OC_SS, D5
+                    MOVE.B  #MOVE_OC_CODE, D5
                     MOVE.B  #OC_SUFFIX_NONE, D6
 
                     BRA     OC_TWO_EA
@@ -1575,9 +1599,9 @@ SET_MOVE_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
 SET_MOVE_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
                     RTS
 
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 * MULS
-*----------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_MULS_OC       MOVE.W  (A2), D0
                     AND.W   #MULS_OC_MASK, D0
                     CMP.W   #MULS_OC, D0
@@ -1626,9 +1650,9 @@ PROCESS_MULS_OC     MOVE.L  (SP)+, D0
                     
                     BRA     PROCESSED_OC
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * ORI
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_ORI_OC        MOVE.W  (A2), D0
                     AND.W   #ORI_OC_MASK, D0
                     CMP.W   #ORI_OC, D0
@@ -1679,9 +1703,9 @@ PROCESS_ORI_OC      MOVE.L  (SP)+, D0
                     
                     BRA     PROCESSED_OC
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * RTS
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_RTS_OC        MOVE.W  (A2), D0
                     AND.W   #RTS_OC_MASK, D0
                     CMP.W   #RTS_OC, D0
@@ -1694,13 +1718,13 @@ PROCESS_RTS_OC      MOVE.L  (SP)+, D0
                     CLR     D2
                     CLR     D3
                     
-                    MOVE.B  #RTS_OC_SS, D3
+                    MOVE.B  #RTS_OC_CODE, D3
                     
                     BRA     OC_NO_EA
                     
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * SUB & SUBA
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_SUB_OC        MOVE.W  (A2), D0
                     AND.W   #SUB_OC_MASK, D0
                     CMP.W   #SUB_OC, D0
@@ -1844,9 +1868,9 @@ PROCESS_SUB_OC_DST  SUBI.B  #4, D0
                     
                     BRA     PROCESSED_OC
 
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 * SUBI
-*--------------------------------------------------
+*------------------------------------------------------------------------------
 CHECK_SUBI_OC       MOVE.W  (A2), D0
                     AND.W   #SUBI_OC_MASK, D0
                     CMP.W   #SUBI_OC, D0
@@ -2613,6 +2637,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
