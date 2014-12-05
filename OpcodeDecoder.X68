@@ -191,7 +191,10 @@ TBL_MASK_CMP        EQU     %11111111
 TBL_MASK_CMPA       EQU     %11111111
 TBL_MASK_CMPI       EQU     %01111101
 
-* EOR Masks
+* DIVS Mask
+TBL_MASK_DIVS       EQU     %11111101
+
+* EOR Mask
 TBL_MASK_EOR        EQU     %01111101
 
 * MOVE Masks
@@ -212,8 +215,9 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
                     *MOVE.L  #AND_INSTR, (A6)
-                    MOVE.L  #CMPI_INSTR, (A6)
+                    *MOVE.L  #CMPI_INSTR, (A6)
                     *MOVE.L  #EOR_INSTR, (A6)
+                    MOVE.W  #DIVS_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -1458,7 +1462,7 @@ PROCESS_DIVS_OC     MOVE.L  (SP)+, D0
                     CLR     D3
                     
                     * Size
-                    MOVE.B  #1, D0
+                    MOVE.B  #OC_WORD_SIZE, D0
                     MOVE.B  D0, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
@@ -1490,7 +1494,11 @@ PROCESS_DIVS_OC     MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DIVS, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    MOVE.B  #DIVS_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * EORI
@@ -2773,6 +2781,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
