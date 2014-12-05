@@ -187,11 +187,12 @@ TBL_MASK_AND_SRC    EQU     %11111101
 TBL_MASK_AND_DST    EQU     %01111100
 
 * CMP Masks
-TBL_MASK_CMP_SRC    EQU     %11111111
-TBL_MASK_CMPA_SRC   EQU     %11111111
+TBL_MASK_CMP        EQU     %11111111
+TBL_MASK_CMPA       EQU     %11111111
+TBL_MASK_CMPI       EQU     %01111101
 
 * EOR Masks
-TBL_MASK_EOR_DST    EQU     %01111101
+TBL_MASK_EOR        EQU     %01111101
 
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
@@ -211,7 +212,8 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
                     *MOVE.L  #AND_INSTR, (A6)
-                    MOVE.W  #CMPA_INSTR, (A6)
+                    MOVE.L  #CMPI_INSTR, (A6)
+                    *MOVE.L  #EOR_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -1294,7 +1296,7 @@ PROCESS_CMP_OC      ADDI.B  #1, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    MOVE.B  #TBL_MASK_CMP_SRC, D3
+                    MOVE.B  #TBL_MASK_CMP, D3
                     MOVE.B  #TBL_MASK_DATA_REG, D4
                     MOVE.B  #CMP_OC_CODE, D5
                     
@@ -1333,7 +1335,7 @@ PROCESS_CMPA_OC     MOVE.B  D0, D1
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    MOVE.B  #TBL_MASK_CMPA_SRC, D3
+                    MOVE.B  #TBL_MASK_CMPA, D3
                     MOVE.B  #TBL_MASK_ADDR_REG, D4
                     MOVE.B  #CMPA_OC_CODE, D5
                     
@@ -1345,9 +1347,8 @@ SET_CMPA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
 SET_CMPA_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
                     BRA     PROCESS_CMPA_OC
 
-PROCESS_EOR_OC      SUBI.B  #4, D0
+PROCESS_EOR_OC      SUBI.B  #3, D0
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
                     
@@ -1378,7 +1379,11 @@ PROCESS_EOR_OC      SUBI.B  #4, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_EOR, D4
+                    MOVE.B  #EOR_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * CMPI
@@ -1401,8 +1406,8 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     LSR.W   #8, D0
                     LSR.W   #6, D0
                     
+                    ADDI.W  #1, D0
                     MOVE.W  D0, D1
-                    ADDI.W  #1, D1
                     LSL.W   #3, D1
                     MOVE.W  D1, D2
                     
@@ -1431,7 +1436,11 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA, D3
+                    MOVE.B  #TBL_MASK_CMPI, D4
+                    MOVE.B  #CMPI_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * DIVS
@@ -2417,7 +2426,7 @@ GET_EA_MODE_6   	CMPI.B #EA_MODE_L_ADDR, D0   	;Is the mode Absolute Long Addres
                     MOVE.B D3, D5               	;Copy the Table Mask
                     ANDI.B #TBL_MASK_L_ADDR, D5  	;Lets mask out the (xxx).L bit
                     CMPI.B #TBL_MASK_L_ADDR, D5  	;Is the (xxx).L bit active?
-                    BNE GET_EA_BAD_MODE      	    ;If it isn't, try (xxx).L mode
+                    BNE GET_EA_MODE_7      	        ;If it isn't, try #<data>
                     
                     ; Register Error Checking
                     CMPI.B #EA_L_REG, D1         	;Make sure the mode is %001
@@ -2764,6 +2773,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
