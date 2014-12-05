@@ -23,6 +23,10 @@ MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
 ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
 RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
+SUBA_INSTR          EQU     $98F8A000           ; SUBA.W $FFFFA000, A4
+SUBI_INSTR          EQU     $04B9
+SUBI_INSTR_2        EQU     $00000309
+SUBI_INSTR_3        EQU     $09381764           ; SUBI.L #777, $09381764
 INVALID_INSTR       EQU     $FFFF
 
 ;=================== Opcode Decoder Constants =================================
@@ -198,6 +202,9 @@ TBL_MASK_DIVS       EQU     %11111101
 TBL_MASK_EOR        EQU     %01111101
 TBL_MASK_EORI       EQU     %01111101
 
+* JSR Mask
+TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
+
 * LEA Mask
 TBL_MASK_LEA        EQU     %01100100
 
@@ -205,8 +212,17 @@ TBL_MASK_LEA        EQU     %01100100
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
 
-* JSR Mask
-TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
+* MULS Mask
+TBL_MASK_MULS       EQU     %11111101
+
+* ORI Mask
+TBL_MASK_ORI        EQU     %01111101
+
+* SUB Masks
+TBL_MASK_SUB_SRC    EQU     %11111111
+TBL_MASK_SUB_DST    EQU     %01111100
+TBL_MASK_SUBA       EQU     %11111111
+TBL_MASK_SUBI       EQU     %01111101
 
 * =============================================================================
 * ================== Begin Program ============================================
@@ -222,7 +238,13 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
                     *MOVE.L  #CMPI_INSTR, (A6)
                     *MOVE.L  #EORI_INSTR, (A6)
                     *MOVE.W  #DIVS_INSTR, (A6)
-                    MOVE.L  #LEA_INSTR, (A6)
+                    *MOVE.L  #LEA_INSTR, (A6)
+                    *MOVE.L  #MULS_INSTR, (A6)
+                    *MOVE.L  #ORI_INSTR, (A6)
+                    *MOVE.L  #SUBA_INSTR, (A6)
+                    MOVE.W  #SUBI_INSTR, (A6)+
+                    MOVE.L  #SUBI_INSTR_2, (A6)+
+                    MOVE.L  #SUBI_INSTR_3, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -895,6 +917,8 @@ PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_LEA_OC
                     JSR     CHECK_RTS_OC
                     JSR     CHECK_ORI_OC
+                    JSR     CHECK_SUB_OC
+                    JSR     CHECK_SUBI_OC
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
@@ -1729,7 +1753,6 @@ PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from t
                     MOVE.B  #TBL_MASK_MOVE_SRC, D3
                     MOVE.B  #TBL_MASK_MOVE_DST, D4
                     MOVE.B  #MOVE_OC_CODE, D5
-                    MOVE.B  #OC_SUFFIX_NONE, D6
 
                     BRA     OC_TWO_EA
 
@@ -1769,9 +1792,8 @@ PROCESS_MULS_OC     MOVE.L  (SP)+, D0
                     CLR     D3
                     
                     * Size
-                    MOVE.B  #1, D0
+                    MOVE.B  #OC_WORD_SIZE, D0
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
                     
@@ -1802,7 +1824,11 @@ PROCESS_MULS_OC     MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_MULS, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    MOVE.B  #MULS_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * ORI
@@ -1824,8 +1850,9 @@ PROCESS_ORI_OC      MOVE.L  (SP)+, D0
                     LSL.W   #8, D0
                     LSR.W   #8, D0
                     LSR.W   #6, D0
+
+                    ADDI.B  #1, D0
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
                     
@@ -1855,7 +1882,11 @@ PROCESS_ORI_OC      MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA, D3
+                    MOVE.B  #TBL_MASK_ORI, D4
+                    MOVE.B  #ORI_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * RTS
@@ -1898,17 +1929,94 @@ PROCESS_SUB_OC      MOVE.L  (SP)+, D0
                     LSR.W   #5, D0
                     
                     CMPI.B  #7, D0
-                    BEQ     PROCESS_SUBA_OC
+                    BEQ     SET_SUBA_SIZE_LONG
                     
                     CMPI.B  #3, D0
-                    BEQ     PROCESS_SUBA_OC
+                    BEQ     SET_SUBA_SIZE_WORD
+                    
+                    CMPI.B  #3, D0
                     BLT     PROCESS_SUB_OC_SRC
+                    
+                    CMPI.B  #3, D0
                     BGT     PROCESS_SUB_OC_DST
 
-PROCESS_SUBA_OC     JSR     SET_SUBA_OC_SIZE
-
+PROCESS_SUB_OC_SRC  ADDI.B  #1, D0
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * Not needed since mode is 000.
+
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_SUB_SRC, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    MOVE.B  #SUB_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
+
+PROCESS_SUB_OC_DST  SUBI.B  #3, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #8, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_SUB_DST, D4
+                    MOVE.B  #SUB_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
+
+PROCESS_SUBA_OC     MOVE.B  D0, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
 
@@ -1941,86 +2049,17 @@ PROCESS_SUBA_OC     JSR     SET_SUBA_OC_SIZE
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_SUBA, D3
+                    MOVE.B  #TBL_MASK_ADDR_REG, D4
+                    MOVE.B  #SUBA_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
-SET_SUBA_OC_SIZE    CMPI.B  #3, D0
-                    BEQ     SET_SUBA_SIZE_WORD
-                    
-                    CMPI.B  #7, D0
-                    BEQ     SET_SUBA_SIZE_LONG
-                    
-                    BRA     INVALID_OC
+SET_SUBA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
+                    BRA     PROCESS_SUBA_OC
 
-SET_SUBA_SIZE_WORD  MOVE.B  #1, D0
-                    RTS
-
-SET_SUBA_SIZE_LONG  MOVE.B  #2, D0
-                    RTS
-
-PROCESS_SUB_OC_SRC  MOVE.B  D0, D1
-                    ADDI.B  #1, D1
-                    LSL.B   #3, D1
-                    
-                    * Source Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Source Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Destination Mode
-                    * Not needed since mode is 000.
-
-                    * Destination Register
-                    MOVE.W  (A2), D2
-                    LSL.W   #4, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
-                    
-                    BRA     PROCESSED_OC
-
-PROCESS_SUB_OC_DST  SUBI.B  #4, D0
-                    MOVE.B  D0, D2
-                    ADDI.B  #1, D2
-                    LSL.B   #3, D2
-                    
-                    * Source Mode
-                    * Not needed since mode is 000.
-                    
-                    * Source Register
-                    MOVE.W  (A2), D1
-                    LSL.W   #4, D1
-                    LSR.W   #8, D1
-                    LSR.W   #5, D1
-                    
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #8, D3
-                    OR.B    D3, D2
-                    
-                    * Destination Mode
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #2, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    LSL.W   #5, D3
-                    OR.B    D3, D2
-                    
-                    BRA     PROCESSED_OC
+SET_SUBA_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
+                    BRA     PROCESS_SUBA_OC
 
 *------------------------------------------------------------------------------
 * SUBI
@@ -2042,8 +2081,9 @@ PROCESS_SUBI_OC     MOVE.L  (SP)+, D0
                     LSL.W   #8, D0
                     LSR.W   #8, D0
                     LSR.W   #6, D0
+
+                    ADDI.B  #1, D0
                     MOVE.B  D0, D1
-                    ADDI.B  #1, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
                     
@@ -2073,7 +2113,11 @@ PROCESS_SUBI_OC     MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA, D3
+                    MOVE.B  #TBL_MASK_SUBI, D4
+                    MOVE.B  #SUBI_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
                     
 * =============================================================================
 * GET_SOURCE_EA
@@ -2490,8 +2534,8 @@ GET_EA_MODE_7   	CMP.B #EA_MODE_DATA, D0   		;Is the mode #<data>?
                     BNE GET_EA_MODE_7_0     		;If it isn't, continue to the next one
                     
                     ; Byte size data
-                    MOVE.B (A4), -(SP)				;Push the byte data to the stack
-                    MOVE.B #2, D1               	;This is the returnSize (eaType + 1 byte data)
+                    MOVE.W (A4), -(SP)				;Push the byte data to the stack
+                    MOVE.B #3, D1               	;This is the returnSize (eaType + 1 byte data)
                     
                     BRA GET_EA_MODE_7_END     		;Skip to the end
                     
@@ -2791,6 +2835,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
