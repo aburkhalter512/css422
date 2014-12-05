@@ -5,7 +5,7 @@ ADD_INSTR           EQU     $D2385000           ; ADD.B $5000, D1
 ADD_INSTR_2         EQU     $D3385000           ; ADD.B D1, $5000
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
 ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
-AND_INSTR           EQU     $C63C0055           ; AND.W #%01010101, D3
+AND_INSTR           EQU     $C67C0055           ; AND.W #%01010101, D3
 BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
                                                 ; BRA.W 4 (equivalent since it's a word displacement)
 BEQ_INSTR           EQU     $6700031E
@@ -182,6 +182,10 @@ TBL_MASK_ADD_SRC    EQU     %11111111
 TBL_MASK_ADD_DST    EQU     %01111100
 TBL_MASK_ADDQ_DST   EQU     %01111111
 
+* AND Masks
+TBL_MASK_AND_SRC    EQU     %11111101
+TBL_MASK_AND_DST    EQU     %01111100
+
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
@@ -194,16 +198,20 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
                     *MOVE.L  #BEQ_INSTR, (A6)
-                    MOVE.L  #ADD_INSTR, (A6)
+                    *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
+                    MOVE.L  #AND_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
                     JSR     PROCESS_OC
+                    
+                    AND.W #%01010101, D3
+
                     
                     MOVE.B  #9, D0
                     TRAP    #15
@@ -1120,12 +1128,16 @@ PROCESS_AND_OC      MOVE.L  (SP)+, D0
                     
                     CMPI.B  #3, D0
                     BLT     PROCESS_AND_OC_SRC
+                    
+                    CMPI.B  #3, D0
                     BGT     PROCESS_AND_OC_DST
+                    
                     BRA     INVALID_OC
 
-PROCESS_AND_OC_SRC  MOVE.B  D0, D1
-                    ADDI.B  #1, D1
+PROCESS_AND_OC_SRC  ADDI.B  #1, D0
+                    MOVE.B  D0, D1
                     LSL.B   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Source Mode
                     MOVE.W  (A2), D3
@@ -1148,26 +1160,32 @@ PROCESS_AND_OC_SRC  MOVE.B  D0, D1
                     * Not needed since mode is 000.
                     
                     * Destination Register
-                    MOVE.W  (A2), D2
-                    LSL.W   #4, D2
-                    LSR.W   #8, D2
-                    LSR.W   #5, D2
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_AND_SRC, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    MOVE.B  #AND_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
-PROCESS_AND_OC_DST  SUBI.B  #4, D0
-                    MOVE.B  D0, D2
-                    ADDI.B  #1, D2
-                    LSL.B   #3, D2
+PROCESS_AND_OC_DST  SUBI.B  #3, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Source Mode
                     * Not needed since mode is 000.
 
                     * Source Register
-                    MOVE.W  (A2), D1
-                    LSL.W   #4, D1
-                    LSR.W   #8, D1
-                    LSR.W   #5, D1
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
 
                     * Destination Mode
                     MOVE.W  (A2), D3
@@ -1186,7 +1204,11 @@ PROCESS_AND_OC_DST  SUBI.B  #4, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_AND_DST, D3
+                    MOVE.B  #AND_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * Bcc (BEQ, BNE, BLT, BHI, BRA)
@@ -2733,6 +2755,8 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
+
 
 
 
