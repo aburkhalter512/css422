@@ -228,9 +228,10 @@ TBL_MASK_SUBI       EQU     %01111101
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
+                    MOVE.W  #$1200, (A6)
                     *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
-                    MOVE.W  #MOVE_INSTR, (A6)
+                    *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
@@ -260,11 +261,190 @@ IOLOOP
 * Data will be stacked down.
 SSTACK	EQU		$FE0000
 		MOVEA.L	#SSTACK,A6
-SD		MOVE.L	(SP)+,D1
+SD		MOVE.W	(SP)+,D1
+* Some handling for first byte
+		ROL.B	#2,D1
+		CMP.B	#$04,D1
+		BLT		SD_ADD		
+		CMP.B	#$08,D1
+		BLT		SD_ADDA
+		CMP.B	#$0C,D1
+		BLT		SD_ADDQ
+		CMP.B	#$10,D1
+		BLT		SD_AND
+		CMP.B	#$14,D1
+		BLT		SD_ASL
+		CMP.B	#$18,D1
+		BLT		SD_ASR
+		CMP.B	#$1C,D1
+		BLT		SD_BRA
+		CMP.B	#$20,D1
+		BLT		SD_BHI
+		CMP.B	#$24,D1
+		BLT		SD_BNE
+		CMP.B	#$28,D1
+		BLT		SD_BEQ
+		CMP.B	#$2C,D1
+		BLT		SD_BLT
+		CMP.B	#$30,D1
+		BLT		SD_BTST
+		CMP.B	#$34,D1
+		BLT		SD_CMP
+		CMP.B	#$38,D1
+		BLT		SD_CMPA
+		CMP.B	#$3C,D1
+		BLT		SD_CMPI
+		CMP.B	#$40,D1
+		BLT		SD_DIVS
+		CMP.B	#$44,D1
+		BLT		SD_EOR
+		CMP.B	#$48,D1
+		BLT		SD_EORI
+		CMP.B	#$4C,D1
+		BLT		SD_JSR
+		CMP.B	#$50,D1
+		BLT		SD_LEA
+		CMP.B	#$54,D1
+		BLT		SD_LSL
+		CMP.B	#$58,D1
+		BLT		SD_LSR
+		CMP.B	#$5C,D1
+		BLT		SD_MOVE
+		CMP.B	#$60,D1
+		BLT		SDMOVEA
+		CMP.B	#$64,D1
+		BLT		SDMOVEM
+		CMP.B	#$68,D1
+		BLT		SD_MULS
+		CMP.B	#$6C,D1
+		BLT		SD_NEG
+		CMP.B	#$70,D1
+		BLT		SD_NOT
+		CMP.B	#$74,D1
+		BLT		SD_ORI
+		CMP.B	#$78,D1
+		BLT		SD_ROL
+		CMP.B	#$7C,D1
+		BLT		SD_ROR
+		CMP.B	#$80,D1
+		BLT		SD_RTS
+		CMP.B	#$84,D1
+		BLT		SD_SUB		
+		CMP.B	#$88,D1
+		BLT		SD_SUBA
+		CMP.B	#$8C,D1
+		BLT		SD_SUBI
+		CMP.B	#$8C,D1
+		BGT		SD_ERR
+
+SD_ADD	MOVE.B #$0C,(A6)+
+		JMP SDSIZE
+SD_ADDA	MOVE.B #$0C,(A6)+
+		MOVE.B #$08,(A6)+
+		JMP SDSIZE
+SD_ADDQ	MOVE.B #$3B,(A6)+
+		JMP SDSIZE
+SD_AND	MOVE.B #$1F,(A6)+
+		JMP SDSIZE
+SD_ASL	MOVE.B #$1B,(A6)+
+		MOVE.B #$19,(A6)+
+		JMP SDSIZE
+SD_ASR	MOVE.B #$1B,(A6)+
+		MOVE.B #$18,(A6)+
+		JMP SDSIZE
+SD_BRA	MOVE.B #$07,(A6)+
+		JMP SDSIZE
+SD_BHI	MOVE.B #$06,(A6)+
+		JMP SDSIZE
+SD_BNE	MOVE.B #$04,(A6)+
+		JMP SDSIZE
+SD_BEQ	MOVE.B #$03,(A6)+
+		JMP SDSIZE
+SD_BLT	MOVE.B #$05,(A6)+
+		JMP SDSIZE
+SD_BTST	MOVE.B #$2A,(A6)+
+		JMP SDSIZE
+SD_CMP	MOVE.B #$0B,(A6)+
+		JMP SDSIZE
+SD_CMPA	MOVE.B #$0B,(A6)+
+		MOVE.B #$08,(A6)+
+		JMP SDSIZE
+SD_CMPI	MOVE.B #$3F,(A6)+
+		JMP SDSIZE
+SD_DIVS	MOVE.B #$2E,(A6)+
+		JMP SDSIZE
+SD_EOR	MOVE.B #$0E,(A6)+
+		JMP SDSIZE
+SD_EORI	MOVE.B #$3E,(A6)+
+		JMP SDSIZE
+SD_JSR	MOVE.B #$2B,(A6)+
+		JMP SDSIZE
+SD_LEA	MOVE.B #$2D,(A6)+
+		JMP SDSIZE
+SD_LSL	MOVE.B #$1A,(A6)+
+		MOVE.B #$19,(A6)+
+		JMP SDSIZE
+SD_LSR	MOVE.B #$1A,(A6)+
+		MOVE.B #$18,(A6)+
+		JMP SDSIZE
+SD_MOVE	MOVE.B #$0A,(A6)+
+		JMP SDSIZE
+SDMOVEA	MOVE.B #$0A,(A6)+
+		MOVE.B #$08,(A6)+
+		JMP SDSIZE
+SDMOVEM	MOVE.B #$3A,(A6)+
+		MOVE.B #$18,(A6)+
+		JMP SDSIZE
+SD_MULS	MOVE.B #$2F,(A6)+
+		JMP SDSIZE
+SD_NEG	MOVE.B #$1D,(A6)+
+		JMP SDSIZE
+SD_NOT	MOVE.B #$1E,(A6)+
+		JMP SDSIZE
+SD_ORI	MOVE.B #$3C,(A6)+
+		JMP SDSIZE
+SD_ROL	MOVE.B #$1C,(A6)+
+		MOVE.B #$19,(A6)+
+		JMP SDSIZE
+SD_ROR	MOVE.B #$1C,(A6)+
+		MOVE.B #$18,(A6)+
+		JMP SDSIZE
+SD_RTS	MOVE.B #$2C,(A6)+
+		JMP SDSIZE
+SD_SUB	MOVE.B #$0D,(A6)+
+		JMP SDSIZE
+SD_SUBA	MOVE.B #$0D,(A6)+
+		MOVE.B #$08,(A6)+
+		JMP SDSIZE
+SD_SUBI	MOVE.B #$3D,(A6)+
+		JMP SDSIZE
+
+SDSIZE	ROR.B	#2,D1
+		CMP.B	#$40,D1
+		BLT		SD_ERR
+		CMP.B	#$80,D1
+		BLT		SD_BYTE
+		CMP.B	#$C0,D1
+		BLT		SD_WORD
+		JMP		SD_LWRD
+SD_BYTE	MOVE.B	#$00,(A6)+
+		JMP SDEND
+SD_WORD	MOVE.B	#$01,(A6)+
+		JMP SDEND
+SD_LWRD	MOVE.B	#$02,(A6)+
+		JMP SDEND
+
+SDEND	MOVE.B	#$FF,(A6)+
+
+		LSL.B	#2,D1
+		LSR.B	#2,D1
+		
 *=== ERROR - Stack gives me value 0256 for Instruction MOVE.B D0, D1.
 		
-		
-SD_ER
+SD_BYTE
+SD_WORD
+SD_LWRD
+SD_ERR
 *--------------------------
 
 *---STRING STACK DECODER---
@@ -2752,12 +2932,12 @@ S0D		DC.B	'SUB',0
 S0E		DC.B	'EOR',0
 S0F		DC.B	'OR',0
 S1A		DC.B	'LS',0
-S1B		DC.B	'RO',0
-S1C		DC.B	'BTST',0
+S1B		DC.B	'AS',0
+S1C		DC.B	'RO',0
 S1D		DC.B	'NEG',0
 S1E		DC.B	'NOT',0
 S1F		DC.B	'AND',0
-S2A		DC.B	'BRA ',0
+S2A		DC.B	'BTST ',0
 S2B		DC.B	'JSR',0
 S2C		DC.B	'RTS',0
 S2D		DC.B	'LEA',0
@@ -2774,10 +2954,12 @@ S03		DC.B	'BEQ ',0
 S04		DC.B	'BNE ',0
 S05		DC.B	'BLT ',0
 S06		DC.B	'BHI ',0
+S07		DC.B	'BRA',0
 *--------OP Suffix---------
-S07		DC.B	'A',0
-S08		DC.B	'R',0
-S09		DC.B	'L',0
+S08		DC.B	'A',0
+S18		DC.B	'R',0
+S19		DC.B	'L',0
+
 *-----------Size-----------
 S00		DC.B	'.B ',0
 S01		DC.B	'.W ',0
@@ -2811,8 +2993,7 @@ S39		DC.B	',',0
 *---------Special---------
 SFF		DC.B	CR,LF,0	
 *---------Reserved--------
-S18		DC.B	'',0
-S19		DC.B	'',0
+S09		DC.B	'',0
 S28		DC.B	'',0
 S29		DC.B	'',0
 S30		DC.B	'',0
