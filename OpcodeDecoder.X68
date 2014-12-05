@@ -186,6 +186,13 @@ TBL_MASK_ADDQ_DST   EQU     %01111111
 TBL_MASK_AND_SRC    EQU     %11111101
 TBL_MASK_AND_DST    EQU     %01111100
 
+* CMP Masks
+TBL_MASK_CMP_SRC    EQU     %11111111
+TBL_MASK_CMPA_SRC   EQU     %11111111
+
+* EOR Masks
+TBL_MASK_EOR_DST    EQU     %01111101
+
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
@@ -203,7 +210,8 @@ TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
-                    MOVE.L  #AND_INSTR, (A6)
+                    *MOVE.L  #AND_INSTR, (A6)
+                    MOVE.W  #CMPA_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -1241,17 +1249,21 @@ PROCESS_CMP_EOR_OC  MOVE.L  (SP)+, D0
                     LSR.W   #5, D0
                     
                     CMPI.B  #3, D0
-                    BEQ     PROCESS_CMP_OC_AN
-                    BLT     PROCESS_CMP_OC_DN
+                    BLT     PROCESS_CMP_OC
+                    
+                    CMPI.B  #3, D0
+                    BEQ     SET_CMPA_SIZE_WORD
                     
                     CMPI.B  #7, D0
-                    BEQ     PROCESS_CMP_OC_AN
+                    BEQ     SET_CMPA_SIZE_LONG
+                    
+                    CMPI.B  #7, D0
                     BLT     PROCESS_EOR_OC
                     
                     BRA     INVALID_OC
 
-PROCESS_CMP_OC_DN   MOVE.L  D0, D1
-                    ADDI.B  #1, D1
+PROCESS_CMP_OC      ADDI.B  #1, D0
+                    MOVE.B  D0, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
                     
@@ -1282,12 +1294,13 @@ PROCESS_CMP_OC_DN   MOVE.L  D0, D1
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
+                    MOVE.B  #TBL_MASK_CMP_SRC, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    MOVE.B  #CMP_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
 
-PROCESS_CMP_OC_AN   JSR     SET_CMP_OC_SIZE
-
-                    MOVE.L  D0, D1
-                    ADDI.B  #1, D1
+PROCESS_CMPA_OC     MOVE.B  D0, D1
                     LSL.B   #3, D1
                     MOVE.B  D1, D2
                     
@@ -1320,21 +1333,17 @@ PROCESS_CMP_OC_AN   JSR     SET_CMP_OC_SIZE
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    BRA     PROCESSED_OC
-
-SET_CMP_OC_SIZE     CMPI.B  #3, D0
-                    BEQ     SET_CMP_SIZE_WORD
+                    MOVE.B  #TBL_MASK_CMPA_SRC, D3
+                    MOVE.B  #TBL_MASK_ADDR_REG, D4
+                    MOVE.B  #CMPA_OC_CODE, D5
                     
-                    CMPI.B  #7, D0
-                    BEQ     SET_CMP_SIZE_LONG
-                    
-                    BRA     INVALID_OC
+                    BRA     OC_TWO_EA
 
-SET_CMP_SIZE_WORD   MOVE.B  #1, D0
-                    RTS
+SET_CMPA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
+                    BRA     PROCESS_CMPA_OC
 
-SET_CMP_SIZE_LONG   MOVE.B  #2, D0
-                    RTS
+SET_CMPA_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
+                    BRA     PROCESS_CMPA_OC
 
 PROCESS_EOR_OC      SUBI.B  #4, D0
                     MOVE.B  D0, D1
@@ -2755,6 +2764,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
