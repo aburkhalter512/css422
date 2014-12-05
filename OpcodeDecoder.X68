@@ -230,7 +230,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     MOVEA.W #START_ADDRESS, A6
                     *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
-                    *MOVE.W  #MOVE_INSTR, (A6)
+                    MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
@@ -242,37 +242,35 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #MULS_INSTR, (A6)
                     *MOVE.L  #ORI_INSTR, (A6)
                     *MOVE.L  #SUBA_INSTR, (A6)
-                    MOVE.W  #SUBI_INSTR, (A6)+
-                    MOVE.L  #SUBI_INSTR_2, (A6)+
-                    MOVE.L  #SUBI_INSTR_3, (A6)
+                    *MOVE.W  #SUBI_INSTR, (A6)+
+                    *MOVE.L  #SUBI_INSTR_2, (A6)+
+                    *MOVE.L  #SUBI_INSTR_3, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
                     JSR     PROCESS_OC
-                    
-                    MOVE.B  #9, D0
-                    TRAP    #15
-
 *--------I/O MODULE--------
 IOLOOP
+*--------------------------
 
 *------STACK DECODER-------
-* In Progress
-* Stack data, starting from $FE0000,
-* and store current data at A6,
+* Stack data starts from $FE0000,
+* and A6 will hold SSP.
 * Data will be stacked down.
-
 SSTACK	EQU		$FE0000
 		MOVEA.L	#SSTACK,A6
-		MOVE.B	#$3F,(A6)+	* TEST
+SD		MOVE.L	(SP)+,D1
+*=== ERROR - Stack gives me value 0256 for Instruction MOVE.B D0, D1.
+		
+		
+SD_ER
+*--------------------------
+
 *---STRING STACK DECODER---
 		MOVEA.L	#SSTACK,A5
 SSD		CMPA.L	A5,A6
 		BEQ		IOLOOP
-
-
-
 		MOVE.B	(A5)+,D7
 		MULU.W	#12,D7
 		ROL.L	#8,D7
@@ -282,8 +280,9 @@ SSD		CMPA.L	A5,A6
 		ROR.L	#8,D7
 		MOVE.L	D7,A4
 		JMP		(A4)
-
-OC_ERROR     
+*--------------------------
+OC_ERROR            MOVE.B  #9, D0
+                    TRAP    #15
 
 OC_CHECK_ERROR      MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
                     MOVE.B  (SP)+, D0   ; Get the GET_x_EA return size from the stack.
@@ -2835,6 +2834,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
