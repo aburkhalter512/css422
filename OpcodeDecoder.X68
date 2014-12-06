@@ -246,7 +246,7 @@ TBL_MASK_SUBI       EQU     %01111101
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
                     *MOVE.W  #$1200, (A6)
-                    MOVE.L  #BEQ_INSTR, (A6)
+                    *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.L  #MOVEA_INSTR, (A6)
@@ -257,10 +257,10 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #CMPI_INSTR, (A6)
                     *MOVE.L  #EORI_INSTR, (A6)
                     *MOVE.W  #DIVS_INSTR, (A6)
-                    *MOVE.L  #LEA_INSTR, (A6)
+                    MOVE.L  #LEA_INSTR, (A6)
                     *MOVE.L  #MULS_INSTR, (A6)
                     *MOVE.L  #ORI_INSTR, (A6)
-                    MOVE.L  #SUBA_INSTR, (A6)
+                    *MOVE.L  #SUBA_INSTR, (A6)
                     *MOVE.W  #SUBI_INSTR, (A6)+
                     *MOVE.L  #SUBI_INSTR_2, (A6)+
                     *MOVE.L  #SUBI_INSTR_3, (A6)
@@ -305,12 +305,15 @@ SD		MOVE.W	(SP)+,D7
 * Size Decoder
 SDSIZE	LSL.B	#6,D7
 		CMP.B	#$40,D7
+		BEQ		SD_NSZ
+		CMP.B	#$40,D7
 		BEQ		SD_BYTE
 		CMP.B	#$80,D7
 		BEQ		SD_WORD
 		CMP.B	#$C0,D7
 		BEQ		SD_LWRD
 		JMP		SD_ERR
+SD_NSZ	MOVE.B	#$09,(A6)+
 SD_BYTE	MOVE.B	#$00,(A6)+
 		MOVE.B	#$09,(A6)+
 		JMP		SDEND
@@ -350,11 +353,11 @@ SSD		CMPA.L	A5,A6
 *------------SDOP----------
 SDOP	ROL.B	#2,D7
 		CMP.B	#$84,D7
-		BGT		SD_SUB
+		BLT		SD_SUB
 		CMP.B	#$88,D7
-		BGT		SD_SUBA
+		BLT		SD_SUBA
 		CMP.B	#$8C,D7
-		BGT		SD_SUBI
+		BLT		SD_SUBI
 		CMP.B	#$04,D7
 		BLT		SD_ADD
 		CMP.B	#$08,D7
