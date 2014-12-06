@@ -1008,7 +1008,7 @@ PREPROCESS_Bcc_WORD * Size
 * PROCESS_OC
 *   This subroutine processes an instruction based off the word value located
 *   at A2 (current instruction). If an error is found (bad instruction or bad EA),
-*   then the error bit of the opcode return value will be set to 1. If no error
+*   then the error bit of the ocInfo return value will be set to 1. If no error
 *   is found, then two byte return values will be placed onto the stack from right
 *   to left indicating the opcode information. Additional data may follow the
 *   return values. The additional information will be supplied by GET_SOURCE_EA
@@ -1018,9 +1018,9 @@ PREPROCESS_Bcc_WORD * Size
 *   error occurs, then there will always be two bytes (plus additional EA data) to
 *   pop off the stack. The value of A2 and A3 are unchanged by this subroutine.
 *
-* + opcode: byte, ocInfo: byte, (additional data, see below)    PROCESS_OC(void)
+* + ocInfo: byte, opcode: byte, (additional data, see below)    PROCESS_OC(void)
 *   OR
-* + opcode: byte    PROCESS_OC(void)
+* + ocInfo: byte    PROCESS_OC(void)
 *
 * For Version 1
 *   Arguments:
@@ -1028,34 +1028,30 @@ PREPROCESS_Bcc_WORD * Size
 *       at least one word of instruction to be at A2 (current instruction counter).
 *
 *   Return Values:
-*       opcode: byte
-*           This is a bit packed byte, storing two distinct pieces of information.
+*       ocInfo: byte
+*           This is a bit packed byte, storing three distinct pieces of information.
 *
 *           Bit 1 contains the error status. If the bit is 0, then there is no
 *           error. If the bit is 1, then there is an error.
 *
 *           Bit 2 will always be 0.
 *
-*           Bits 3-8 will contain the opcode. The value corresponds to the String
-*           Stack Decoder (SSD) table defined in the design document.
+*           Bits 3-5 contain the word count. The value corresponds to the
+*           amount of data following the instruction.
 *
-*           If there is no error, then the byte can be interpreted as the SSD
-*           opcode value since bits 1-2 will be 0.
+*           Bit 6 will always be 0.
 *
-*       ocInfo: byte
-*           This is a bit packed byte, storing 3 distinct pieces of information.
+*           Bits 7-8 contain the number of effective addresses for the instruction.
+*           00 for no EAs, 01 for 1 EAs, and 10 for 2 EAs. If there are EAs, then please
+*           refer to the additional information below.
+*
+*       opcode: byte
+*           This is a bit packed byte, storing 2 distinct pieces of information.
 *
 *           Bits 1 and 2 contain the opcode size.
-*           00 for byte, 01 for word, and 11 for long-word.
+*           00 for unsized, 01 byte, 10 for word, and 11 for long-word.
 *
-*           Bits 3 and 4 contain the opcode suffix.
-*           00 for no suffix, 01 for A, 10 for L, and 11 for R.
-*
-*           Bits 5 and 6 will always be 0.
-*
-*           Bits 7 and 8 contain the number of effective addresses for the instruction.
-*           00 for no EAs, 01 for 1 EAs, and 10 for 2 EAs. If there are EAs, then pelase
-*           refer to the additional information below.
+*           Bits 3-8 contain the opcode. The opcode values can be found in the documentation.
 *
 *       (additional data):
 *           If there are EAs, then there will be additional data on the stack.
@@ -1065,8 +1061,8 @@ PREPROCESS_Bcc_WORD * Size
 *           ordered by source EA followed by the destination EA.
 *
 *           For example, if the instruction requires two EAs, then the stack will look
-*           like the following: [opcode] [ocInfo] [source EA] [destination EA].
-*           The information is ordered right to left, meaning that [opcode] is the first
+*           like the following: [ocInfo] [opcode] [source EA] [destination EA].
+*           The information is ordered right to left, meaning that [ocInfo] is the first
 *           thing that will be popped off the stack.
 *
 *           In the event there is only one EA, then the stack will have the same exact
@@ -1079,10 +1075,10 @@ PREPROCESS_Bcc_WORD * Size
 *       at least one word of instruction to be at A2 (current instruction counter).
 *
 *   Return Values:
-*       opcode: byte
+*       ocInfo: byte
 *           The most significant bit will be 1 indicating an error. No other information
 *           will be on the stack (clean).
-* =============================================================================      
+* =============================================================================
 PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
@@ -3015,6 +3011,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
