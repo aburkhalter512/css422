@@ -481,8 +481,11 @@ SSD		CMPA.L	A5,A6
 		MOVE.L	D7,A4
 		JMP		(A4)
 *--------------------------
-OC_ERROR            MOVE.B  #9, D0
-                    TRAP    #15
+OC_ERROR            MOVE.L  #$00FFFFFC, A7 ; Move the SP to the RTS value, effectively cleaning the stack.
+                    MOVE.L  (SP)+, A6
+                    MOVE.B  #ERROR_MASK, -(SP)
+                    MOVE.L  A6, -(SP)
+                    RTS
 
 OC_CHECK_ERROR      MOVEA.L (SP)+, A6   ; Get the RTS value from the stack.
                     MOVE.B  (SP)+, D0   ; Get the GET_x_EA return size from the stack.
@@ -3141,6 +3144,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
