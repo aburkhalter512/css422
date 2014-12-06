@@ -6,6 +6,8 @@ ADD_INSTR_2         EQU     $D3385000           ; ADD.B D1, $5000
 ADDA_INSTR          EQU     $D6F85000           ; ADDA.W $5000, A3
 ADDQ_INSTR          EQU     $5E45               ; ADDQ.W #7, D5
 AND_INSTR           EQU     $C67C0055           ; AND.W #%01010101, D3
+ASL_INSTR           EQU     $E922               ; ASL.B D4, D2
+ASR_INSTR           EQU     $EC60               ; ASR.W D6, D0
 BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
                                                 ; BRA.W 4 (equivalent since it's a word displacement)
 BEQ_INSTR           EQU     $6700031E
@@ -18,6 +20,8 @@ EORI_INSTR          EQU     $0A410007           ; EORI.W #7, D1
 JSR_INSTR_OC        EQU     $4EB9
 JSR_INSTR_DATA      EQU     $0000101A           ; JSR $0000101A
 LEA_INSTR           EQU     $4BF85000           ; LEA $5000, A5
+LSL_INSTR           EQU     $EB69               ; LSL.W D5, D1
+LSR_INSTR           EQU     $EEAE               ; LSR.L D7, D6
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MOVEA_INSTR         EQU     $347C4000           ; MOVEA.W #$4000, A2
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
@@ -25,6 +29,8 @@ NEG_INSTR           EQU     $4479
 NEG_INSTR_DATA      EQU     $00008000           ; NEG.W $8000
 NOT_INSTR           EQU     $4685               ; NOT.L D5
 ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
+ROL_INSTR           EQU     $E53D               ; ROL.B D2, D5
+ROR_INSTR           EQU     $EEB8               ; ROR.L D7, D0
 RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
 SUBA_INSTR          EQU     $98F8A000           ; SUBA.W $FFFFA000, A4
@@ -57,8 +63,6 @@ BLT_CC              EQU     %1101
 ADD_OC              EQU     $D000
 ADDQ_OC             EQU     $5000
 AND_OC              EQU     $C000
-ASL_OC              EQU     $E100
-ASR_OC              EQU     $E000
 Bcc_OC              EQU     $6000
 CMP_EOR_OC          EQU     $B000
 CMPI_OC             EQU     $0C00
@@ -76,11 +80,13 @@ RTS_OC              EQU     $4E75
 SUB_OC              EQU     $9000
 SUBI_OC             EQU     $0400
 
+REG_SHIFT_OC        EQU     $E000
+MEM_SHIFT_OC        EQU     $E0C0
+
 ;=================== Opcode Masks =============================================
 ADD_OC_MASK         EQU     $F000
 ADDQ_OC_MASK        EQU     $F100
 AND_OC_MASK         EQU     $F000
-AS_MASK             EQU     $F1
 Bcc_OC_MASK         EQU     $F000
 CMP_EOR_OC_MASK     EQU     $F000
 CMPI_OC_MASK        EQU     $FF00
@@ -97,6 +103,9 @@ ORI_OC_MASK         EQU     $FF00
 RTS_OC_MASK         EQU     $FFFF
 SUB_OC_MASK         EQU     $F000
 SUBI_OC_MASK        EQU     $FF00
+
+REG_SHIFT_OC_MASK   EQU     $F000
+MEM_SHIFT_OC_MASK   EQU     $F8C0
 
 ;=================== Terry's Opcode Codes =====================================
 ADD_OC_CODE         EQU     $00
@@ -270,6 +279,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #NEG_INSTR_DATA, (A6)
                     *MOVE.W  #NOT_INSTR, (A6)
                     *MOVE.W  #INVALID_INSTR, (A6)
+                    MOVE.W  #ROR_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -1158,6 +1168,7 @@ PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_SUBI_OC
                     JSR     CHECK_NOT_OC
                     JSR     CHECK_NEG_OC
+                    JSR     CHECK_REG_SHIFT_OC
                     JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     OC_ERROR
@@ -2315,7 +2326,167 @@ PROCESS_RTS_OC      MOVE.L  (SP)+, D0
                     MOVE.B  #RTS_OC_CODE, D5
                     
                     BRA     OC_NO_EA
+
+*------------------------------------------------------------------------------
+* REG_SHIFT (ASd, LSd, ROd)
+*------------------------------------------------------------------------------
+CHECK_REG_SHIFT_OC  MOVE.W  (A2), D0
+                    AND.W   #REG_SHIFT_OC_MASK, D0
+                    CMP.W   #REG_SHIFT_OC, D0
+                    BEQ     PREPROCESS_RS_OC
+                    RTS
+
+PREPROCESS_RS_OC    MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
                     
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    
+                    ADDI.B  #1, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Direction
+                    MOVE.W  (A2), D4
+                    LSL.W   #7, D4
+                    LSR.W   #8, D4
+                    LSR.W   #7, D4
+                    LSL.W   #3, D4
+                    
+                    * Immediate/Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #7, D3
+                    LSL.W   #2, D3
+                    OR.B    D3, D4
+                    
+                    * Opcode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #3, D3
+                    LSR.W   #8, D3
+                    LSR.W   #6, D3
+                    OR.B    D3, D4
+                    
+                    CMPI.B  #%0000, D4
+                    BEQ     SET_ASR_ID_RS_OC
+                    
+                    CMPI.B  #%0100, D4
+                    BEQ     SET_ASR_DR_RS_OC
+                    
+                    CMPI.B  #%1000, D4
+                    BEQ     SET_ASL_ID_RS_OC
+                    
+                    CMPI.B  #%1100, D4
+                    BEQ     SET_ASL_DR_RS_OC
+                    
+                    CMPI.B  #%0001, D4
+                    BEQ     SET_LSR_ID_RS_OC
+                    
+                    CMPI.B  #%0101, D4
+                    BEQ     SET_LSR_DR_RS_OC
+                    
+                    CMPI.B  #%1001, D4
+                    BEQ     SET_LSL_ID_RS_OC
+                    
+                    CMPI.B  #%1101, D4
+                    BEQ     SET_LSL_DR_RS_OC
+                    
+                    CMPI.B  #%0011, D4
+                    BEQ     SET_ROR_ID_RS_OC
+                    
+                    CMPI.B  #%0111, D4
+                    BEQ     SET_ROR_DR_RS_OC
+                    
+                    CMPI.B  #%1011, D4
+                    BEQ     SET_ROL_ID_RS_OC
+                    
+                    CMPI.B  #%1111, D4
+                    BEQ     SET_ROL_DR_RS_OC
+                    
+                    BRA     OC_ERROR
+
+SET_ASR_ID_RS_OC    MOVE.B  #ASR_OC_CODE, D5
+                    BRA     PROCESS_ID_RS_OC
+
+SET_ASR_DR_RS_OC    MOVE.B  #ASR_OC_CODE, D5
+                    BRA     PROCESS_DR_RS_OC
+
+SET_ASL_ID_RS_OC    MOVE.B  #ASL_OC_CODE, D5
+                    BRA     PROCESS_ID_RS_OC
+
+SET_ASL_DR_RS_OC    MOVE.B  #ASL_OC_CODE, D5
+                    BRA     PROCESS_DR_RS_OC
+
+SET_LSR_ID_RS_OC    MOVE.B  #LSR_OC_CODE, D5
+                    BRA     PROCESS_ID_RS_OC
+
+SET_LSR_DR_RS_OC    MOVE.B  #LSR_OC_CODE, D5
+                    BRA     PROCESS_DR_RS_OC
+
+SET_LSL_ID_RS_OC    MOVE.B  #LSL_OC_CODE, D5
+                    BRA     PROCESS_ID_RS_OC
+
+SET_LSL_DR_RS_OC    MOVE.B  #LSL_OC_CODE, D5
+                    BRA     PROCESS_DR_RS_OC
+
+SET_ROR_ID_RS_OC    MOVE.B  #ROR_OC_CODE, D5
+                    BRA     PROCESS_ID_RS_OC
+
+SET_ROR_DR_RS_OC    MOVE.B  #ROR_OC_CODE, D5
+                    BRA     PROCESS_DR_RS_OC
+
+SET_ROL_ID_RS_OC    MOVE.B  #ROL_OC_CODE, D5
+                    BRA     PROCESS_ID_RS_OC
+
+SET_ROL_DR_RS_OC    MOVE.B  #ROL_OC_CODE, D5
+                    BRA     PROCESS_DR_RS_OC
+
+*------------------------------------------------------------------------------
+* PROCESS_ID_RS_OC (Immediate Data Register Shift)
+* Example: ASL #<data>, Dy
+*------------------------------------------------------------------------------
+PROCESS_ID_RS_OC    BRA     OC_ERROR
+
+*------------------------------------------------------------------------------
+* PROCESS_DR_RS_OC (Data Register Register Shift)
+* Example: ASL Dx, Dy
+*------------------------------------------------------------------------------
+PROCESS_DR_RS_OC    * Source Mode
+                    * Not needed since mode is 000.
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Mode
+                    * Not needed since mode is 000.
+                    
+                    * Source Destination
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_DATA_REG, D4
+                    
+                    BRA     OC_TWO_EA
+
 *------------------------------------------------------------------------------
 * SUB & SUBA
 *------------------------------------------------------------------------------
@@ -3241,6 +3412,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
