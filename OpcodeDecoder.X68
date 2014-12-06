@@ -249,7 +249,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
-                    MOVE.L  #MOVEA_INSTR, (A6)
+                    *MOVE.L  #MOVEA_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
@@ -260,7 +260,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #LEA_INSTR, (A6)
                     *MOVE.L  #MULS_INSTR, (A6)
                     *MOVE.L  #ORI_INSTR, (A6)
-                    *MOVE.L  #SUBA_INSTR, (A6)
+                    MOVE.L  #SUBA_INSTR, (A6)
                     *MOVE.W  #SUBI_INSTR, (A6)+
                     *MOVE.L  #SUBI_INSTR_2, (A6)+
                     *MOVE.L  #SUBI_INSTR_3, (A6)
@@ -349,6 +349,12 @@ SSD		CMPA.L	A5,A6
 
 *------------SDOP----------
 SDOP	ROL.B	#2,D7
+		CMP.B	#$84,D7
+		BGT		SD_SUB
+		CMP.B	#$88,D7
+		BGT		SD_SUBA
+		CMP.B	#$8C,D7
+		BGT		SD_SUBI
 		CMP.B	#$04,D7
 		BLT		SD_ADD
 		CMP.B	#$08,D7
@@ -413,13 +419,7 @@ SDOP	ROL.B	#2,D7
 		BLT		SD_ROR
 		CMP.B	#$80,D7
 		BLT		SD_RTS
-		CMP.B	#$84,D7
-		BLT		SD_SUB
-		CMP.B	#$88,D7
-		BLT		SD_SUBA
-		CMP.B	#$8C,D7
-		BLT		SD_SUBI
-		CMP.B	#$8C,D7
+		CMP.B	#$80,D7
 		BGT		SD_ERR
 
 SD_ADD	MOVE.B #$0C,(A6)+
@@ -3228,6 +3228,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
