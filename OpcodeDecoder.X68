@@ -20,6 +20,8 @@ JSR_INSTR_DATA      EQU     $0000101A           ; JSR $0000101A
 LEA_INSTR           EQU     $4BF85000           ; LEA $5000, A5
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
+NEG_INSTR           EQU     $4479
+NEG_INSTR_DATA      EQU     $00008000           ; NEG.W $8000
 ORI_INSTR           EQU     $00030036           ; ORI.B #54, D3
 RTS_INSTR           EQU     $4E75               ; RTS
 SUB_INSTR           EQU     $9A383256           ; SUB.B $3256, D5
@@ -62,6 +64,7 @@ JSR_OC              EQU     $4E80
 LEA_OC              EQU     $41C0
 MOVE_OC             EQU     $0000
 MULS_OC             EQU     $C1C0
+NEG_OC              EQU     $4400
 ORI_OC              EQU     $0000
 RTS_OC              EQU     $4E75
 SUB_OC              EQU     $9000
@@ -80,6 +83,7 @@ JSR_OC_MASK         EQU     $FF80
 LEA_OC_MASK         EQU     $F1C0
 MOVE_OC_MASK        EQU     $C000
 MULS_OC_MASK        EQU     $F1C0
+NEG_OC_MASK         EQU     $FF00
 ORI_OC_MASK         EQU     $FF00
 RTS_OC_MASK         EQU     $FFFF
 SUB_OC_MASK         EQU     $F000
@@ -215,6 +219,9 @@ TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address regist
 * MULS Mask
 TBL_MASK_MULS       EQU     %11111101
 
+* NEG Mask
+TBL_MASK_NEG        EQU     %01111101
+
 * ORI Mask
 TBL_MASK_ORI        EQU     %01111101
 
@@ -246,11 +253,17 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.W  #SUBI_INSTR, (A6)+
                     *MOVE.L  #SUBI_INSTR_2, (A6)+
                     *MOVE.L  #SUBI_INSTR_3, (A6)
+                    MOVE.W  #NEG_INSTR, (A6)+
+                    MOVE.L  #NEG_INSTR_DATA, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
                     JSR     PROCESS_OC
+                    
+                    MOVE.B  #9, D0
+                    TRAP    #15
+
 *--------I/O MODULE--------
 IOLOOP
 *--------------------------
@@ -441,9 +454,9 @@ SDEND	MOVE.B	#$FF,(A6)+
 		
 *=== ERROR - Stack gives me value 0256 for Instruction MOVE.B D0, D1.
 		
-SD_BYTE
-SD_WORD
-SD_LWRD
+*SD_BYTE
+*SD_WORD
+*SD_LWRD
 SD_ERR
 *--------------------------
 
@@ -1094,6 +1107,7 @@ PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_ORI_OC
                     JSR     CHECK_SUB_OC
                     JSR     CHECK_SUBI_OC
+                    JSR     CHECK_NEG_OC
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
@@ -2004,6 +2018,60 @@ PROCESS_MULS_OC     MOVE.L  (SP)+, D0
                     MOVE.B  #MULS_OC_CODE, D5
                     
                     BRA     OC_TWO_EA
+
+*------------------------------------------------------------------------------
+* NEG
+*------------------------------------------------------------------------------
+CHECK_NEG_OC        MOVE.W  (A2), D0
+                    AND.W   #NEG_OC_MASK, D0
+                    CMP.W   #NEG_OC, D0
+                    BEQ     PROCESS_NEG_OC
+                    RTS
+
+PROCESS_NEG_OC      MOVE.L  (SP)+, D0
+                    CLR     D0
+                    CLR     D1
+                    CLR     D2
+                    CLR     D3
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+
+                    ADDI.B  #1, D0
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    * There is no destination mode.
+                    
+                    * Destination Register
+                    * There is no destination register.
+                    
+                    MOVE.B  #TBL_MASK_NEG, D3
+                    MOVE.B  #NEG_OC_CODE, D5
+                    
+                    BRA     OC_ONE_EA
 
 *------------------------------------------------------------------------------
 * ORI
@@ -3011,6 +3079,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
