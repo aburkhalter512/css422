@@ -19,6 +19,7 @@ JSR_INSTR_OC        EQU     $4EB9
 JSR_INSTR_DATA      EQU     $0000101A           ; JSR $0000101A
 LEA_INSTR           EQU     $4BF85000           ; LEA $5000, A5
 MOVE_INSTR          EQU     $1200               ; MOVE.B D0, D1
+MOVEA_INSTR         EQU     $347C4000           ; MOVEA.W #$4000, A2
 MULS_INSTR          EQU     $C7FC0038           ; MULS.W #56, D3
 NEG_INSTR           EQU     $4479
 NEG_INSTR_DATA      EQU     $00008000           ; NEG.W $8000
@@ -64,6 +65,7 @@ EORI_OC             EQU     $0A00
 JSR_OC              EQU     $4E80
 LEA_OC              EQU     $41C0
 MOVE_OC             EQU     $0000
+MOVEA_OC            EQU     $0040
 MULS_OC             EQU     $C1C0
 NEG_OC              EQU     $4400
 NOT_OC              EQU     $4600
@@ -84,6 +86,7 @@ EORI_OC_MASK        EQU     $FF00
 JSR_OC_MASK         EQU     $FF80
 LEA_OC_MASK         EQU     $F1C0
 MOVE_OC_MASK        EQU     $C000
+MOVEA_OC_MASK       EQU     $C140
 MULS_OC_MASK        EQU     $F1C0
 NEG_OC_MASK         EQU     $FF00
 NOT_OC_MASK         EQU     $FF00
@@ -218,6 +221,7 @@ TBL_MASK_LEA        EQU     %01100100
 * MOVE Masks
 TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
 TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
+TBL_MASK_MOVEA      EQU     %11111111
 
 * MULS Mask
 TBL_MASK_MULS       EQU     %11111101
@@ -245,6 +249,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
+                    MOVE.L  #MOVEA_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
@@ -261,7 +266,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #SUBI_INSTR_3, (A6)
                     *MOVE.W  #NEG_INSTR, (A6)+
                     *MOVE.L  #NEG_INSTR_DATA, (A6)
-                    MOVE.W  #NOT_INSTR, (A6)
+                    *MOVE.W  #NOT_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -1119,6 +1124,7 @@ PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_SUBI_OC
                     JSR     CHECK_NOT_OC
                     JSR     CHECK_NEG_OC
+                    JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     INVALID_OC
 
@@ -1975,6 +1981,70 @@ SET_MOVE_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
 
 SET_MOVE_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
                     RTS
+
+*------------------------------------------------------------------------------
+* MOVEA
+*------------------------------------------------------------------------------
+CHECK_MOVEA_OC      MOVE.W  (A2), D0                ; Create a copy of the current instruction.
+                    AND.W   #MOVEA_OC_MASK, D0      ; Apply the MOVEA bit mask.
+                    CMP.W   #MOVEA_OC, D0           ; Check if the result of the bit mask application is a MOVEA instruction.
+                    BEQ     PROCESS_MOVEA_OC        ; Branch and process if it is.
+                    RTS                             ; Return since the instruction is not MOVEA.
+
+PROCESS_MOVEA_OC    MOVE.L  (SP)+, D0               ; Pop the RTS address from the stack.
+                    CLR     D0                      ; Clear D0 for processing.
+                    CLR     D1                      ; Clear D1 for processing.
+                    CLR     D2                      ; Clear D2 for processing.
+                    CLR     D3                      ; Clear D3 for processing.
+                    
+                    * Size
+                    MOVE.W  (A2), D0                ; Create a copy of the current instruction.
+                    LSL.W   #2, D0                  ; Shift left 2 bits.
+                    LSR.W   #8, D0                  ; Shift right 8 bits.
+                    LSR.W   #6, D0                  ; Shift right 6 bits.
+                    
+                    JSR     SET_MOVE_OC_SIZE
+                    
+                    MOVE.W  D0, D1
+                    LSL.W   #3, D1                  ; Shift left 3 bits. Size now isolated in the form 000SS000.
+                    MOVE.W  D1, D2                  ; 
+                    
+                    * Source Mode
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #8, D3                ; Shift left 8 bits.
+                    LSL.W   #2, D3                  ; Shift left 2 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits.
+                    LSL.W   #5, D3                  ; Shift left 5 bits. Source mode now isolated in the form MMM00000.
+                    OR.B    D3, D1                  ; OR the mode with the size in D1.
+                                                    ; Result: MMMSS000.
+                    * Source Register
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #8, D3                  ; Shift left 8 bits.
+                    LSL.W   #5, D3                  ; Shift left 5 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits. Source register now isolated in the form 00000RRR.
+                    OR.B    D3, D1                  ; OR the register with the size and mode in D1.
+                                                    ; Result: MMMSSRRR. Source EA packed byte complete.
+
+                    * Destination Mode
+                    MOVE.W  #1, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+
+                    * Destination Register
+                    MOVE.W  (A2), D3                ; Create a copy of the current instruction.
+                    LSL.W   #4, D3                  ; Shift left 4 bits.
+                    LSR.W   #8, D3                  ; Shift right 8 bits.
+                    LSR.W   #5, D3                  ; Shift right 5 bits. Destination register now isolated in the form 00000RRR.
+                    OR.B    D3, D2                  ; OR the register with the size in D0.
+                                                    ; Result: 000SSRRR.
+
+                    MOVE.B  #TBL_MASK_MOVEA, D3
+                    MOVE.B  #TBL_MASK_ADDR_REG, D4
+                    MOVE.B  #MOVEA_OC_CODE, D5
+
+                    BRA     OC_TWO_EA
 
 *------------------------------------------------------------------------------
 * MULS
@@ -3144,6 +3214,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
