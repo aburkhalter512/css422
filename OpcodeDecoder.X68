@@ -248,7 +248,6 @@ TBL_MASK_SUBI       EQU     %01111101
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    *MOVE.W  #$1200, (A6)
                     *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
@@ -260,7 +259,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #CMPI_INSTR, (A6)
                     *MOVE.L  #EORI_INSTR, (A6)
                     *MOVE.W  #DIVS_INSTR, (A6)
-                    MOVE.L  #LEA_INSTR, (A6)
+                    *MOVE.L  #LEA_INSTR, (A6)
                     *MOVE.L  #MULS_INSTR, (A6)
                     *MOVE.L  #ORI_INSTR, (A6)
                     *MOVE.L  #SUBA_INSTR, (A6)
@@ -308,7 +307,7 @@ SD		MOVE.W	(SP)+,D7
 
 * Size Decoder
 SDSIZE	LSL.B	#6,D7
-		CMP.B	#$40,D7
+		CMP.B	#$00,D7
 		BEQ		SD_NSZ
 		CMP.B	#$40,D7
 		BEQ		SD_BYTE
@@ -318,6 +317,7 @@ SDSIZE	LSL.B	#6,D7
 		BEQ		SD_LWRD
 		JMP		SD_ERR
 SD_NSZ	MOVE.B	#$09,(A6)+
+		JMP		SDEND
 SD_BYTE	MOVE.B	#$00,(A6)+
 		MOVE.B	#$09,(A6)+
 		JMP		SDEND
@@ -329,7 +329,9 @@ SD_LWRD	MOVE.B	#$02,(A6)+
 		JMP		SDEND
 
 * EA Decoder
-
+SDEA	CMP.B	#0,D6
+		BEQ		SDEND
+		JMP		SDEND
 * New Line		
 SDEND	MOVE.B	#$30,(A6)
 		MOVEA.L	#SSTACK,A5
@@ -424,9 +426,9 @@ SDOP	ROL.B	#2,D7
 		BLT		SD_ROL
 		CMP.B	#$7C,D7
 		BLT		SD_ROR
-		CMP.B	#$80,D7
-		BLT		SD_RTS
-		CMP.B	#$80,D7
+		CMP.B	#$7C,D7
+		BEQ		SD_RTS
+		CMP.B	#$7C,D7
 		BGT		SD_ERR
 
 SD_ADD	MOVE.B #$0C,(A6)+
@@ -445,17 +447,23 @@ SD_ASR	MOVE.B #$1B,(A6)+
 		MOVE.B #$18,(A6)+
 		JMP SDSIZE
 SD_BRA	MOVE.B #$07,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_BHI	MOVE.B #$06,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_BNE	MOVE.B #$04,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_BEQ	MOVE.B #$03,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_BLT	MOVE.B #$05,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_BTST	MOVE.B #$2A,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_CMP	MOVE.B #$0B,(A6)+
 		JMP SDSIZE
 SD_CMPA	MOVE.B #$0B,(A6)+
@@ -470,9 +478,11 @@ SD_EOR	MOVE.B #$0E,(A6)+
 SD_EORI	MOVE.B #$3E,(A6)+
 		JMP SDSIZE
 SD_JSR	MOVE.B #$2B,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_LEA	MOVE.B #$2D,(A6)+
-		JMP SDSIZE
+		MOVE.B #$09,(A6)+
+		JMP SDEA
 SD_LSL	MOVE.B #$1A,(A6)+
 		MOVE.B #$19,(A6)+
 		JMP SDSIZE
@@ -3231,6 +3241,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
