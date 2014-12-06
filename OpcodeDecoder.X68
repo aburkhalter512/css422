@@ -57,6 +57,8 @@ BLT_CC              EQU     %1101
 ADD_OC              EQU     $D000
 ADDQ_OC             EQU     $5000
 AND_OC              EQU     $C000
+ASL_OC              EQU     $E100
+ASR_OC              EQU     $E000
 Bcc_OC              EQU     $6000
 CMP_EOR_OC          EQU     $B000
 CMPI_OC             EQU     $0C00
@@ -78,6 +80,7 @@ SUBI_OC             EQU     $0400
 ADD_OC_MASK         EQU     $F000
 ADDQ_OC_MASK        EQU     $F100
 AND_OC_MASK         EQU     $F000
+AS_MASK             EQU     $F1
 Bcc_OC_MASK         EQU     $F000
 CMP_EOR_OC_MASK     EQU     $F000
 CMPI_OC_MASK        EQU     $FF00
@@ -249,8 +252,8 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
-                    MOVE.L  #MOVEA_INSTR, (A6)
-                    *MOVE.W  #RTS_INSTR, (A6)
+                    *MOVE.L  #MOVEA_INSTR, (A6)
+                    MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
                     *MOVE.L  #AND_INSTR, (A6)
@@ -267,6 +270,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.W  #NEG_INSTR, (A6)+
                     *MOVE.L  #NEG_INSTR_DATA, (A6)
                     *MOVE.W  #NOT_INSTR, (A6)
+                    *MOVE.W  #INVALID_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -632,7 +636,7 @@ OC_SET_WC           CMPI.B  #0, D7
                     CMPI.B  #8, D7
                     BEQ     OC_SET_WC_4
                     
-                    BRA     INVALID_OC  ; 7+ which indicates a bug.
+                    BRA     OC_ERROR  ; 7+ which indicates a bug.
 
 OC_SET_WC_0         MOVE.W  #0, D7
                     RTS
@@ -666,8 +670,7 @@ OC_SET_WC_8         MOVE.W  #8, D7
 * 1. D5 contains the Opcode string stack code.
 *------------------------------------------------------------------------------
 OC_NO_EA            MOVE.L  (SP)+, A6   ; Get the RTS value from the stack.
-                    MOVE.B  D5, -(SP)   ; Put the Opcode code on the stack.
-                    MOVE.B  #0, -(SP)   ; There is no word count or EA count.
+                    MOVE.W  D5, -(SP)   ; Put the Opcode code on the stack.
                     MOVE.L  A6, -(SP)   ; Put the RTS value back on the stack.
                     RTS
 
@@ -983,7 +986,7 @@ SET_Bcc_OC          CMPI.B  #BRA_CC, D4
                     CMPI.B  #BLT_CC, D4
                     BEQ     SET_BLT_OC
                     
-                    BRA     INVALID_OC
+                    BRA     OC_ERROR
 
 SET_BRA_OC          MOVE.B  #BRA_OC_CODE, D5
                     RTS
@@ -1126,10 +1129,7 @@ PROCESS_OC          JSR     CHECK_ADD_OC
                     JSR     CHECK_NEG_OC
                     JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
-                    BRA     INVALID_OC
-
-PROCESSED_OC        RTS
-INVALID_OC          RTS
+                    BRA     OC_ERROR
 
 *------------------------------------------------------------------------------
 * ADD & ADDA
@@ -1207,7 +1207,7 @@ SET_ADDA_OC_SIZE    CMPI.B  #3, D0
                     CMPI.B  #7, D0
                     BEQ     SET_ADDA_SIZE_LONG
                     
-                    BRA     INVALID_OC
+                    BRA     OC_ERROR
 
 SET_ADDA_SIZE_WORD  MOVE.B  #OC_WORD_SIZE, D0
                     RTS
@@ -1370,7 +1370,7 @@ PROCESS_AND_OC      MOVE.L  (SP)+, D0
                     LSR.W   #5, D0
                     
                     CMPI.B  #7, D0
-                    BEQ     INVALID_OC
+                    BEQ     OC_ERROR
                     
                     CMPI.B  #3, D0
                     BLT     PROCESS_AND_OC_SRC
@@ -1378,7 +1378,7 @@ PROCESS_AND_OC      MOVE.L  (SP)+, D0
                     CMPI.B  #3, D0
                     BGT     PROCESS_AND_OC_DST
                     
-                    BRA     INVALID_OC
+                    BRA     OC_ERROR
 
 PROCESS_AND_OC_SRC  ADDI.B  #1, D0
                     MOVE.B  D0, D1
@@ -1498,7 +1498,7 @@ PROCESS_CMP_EOR_OC  MOVE.L  (SP)+, D0
                     CMPI.B  #7, D0
                     BLT     PROCESS_EOR_OC
                     
-                    BRA     INVALID_OC
+                    BRA     OC_ERROR
 
 PROCESS_CMP_OC      ADDI.B  #1, D0
                     MOVE.B  D0, D1
@@ -1971,7 +1971,7 @@ SET_MOVE_OC_SIZE    CMPI.B  #1, D0
                     CMPI.B  #2, D0
                     BEQ     SET_MOVE_SIZE_LONG
                     
-                    BRA     INVALID_OC
+                    BRA     OC_ERROR
 
 SET_MOVE_SIZE_BYTE  MOVE.B  #OC_BYTE_SIZE, D0
                     RTS
@@ -3214,6 +3214,8 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
+
 
 
 
