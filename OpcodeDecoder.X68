@@ -245,8 +245,8 @@ TBL_MASK_SUBI       EQU     %01111101
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    MOVE.W  #$1200, (A6)
-                    *MOVE.L  #BEQ_INSTR, (A6)
+                    *MOVE.W  #$1200, (A6)
+                    MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
                     *MOVE.W  #MOVE_INSTR, (A6)
                     MOVE.L  #MOVEA_INSTR, (A6)
@@ -272,94 +272,154 @@ TBL_MASK_SUBI       EQU     %01111101
                     MOVEA.W A2, A3
                     
                     JSR     PROCESS_OC
-                    
-                    MOVE.B  #9, D0
-                    TRAP    #15
 
 *--------I/O MODULE--------
-IOLOOP
+		JMP		SD
+IOLOOP	MOVE.B	#9,D0
+		TRAP	#15
 *--------------------------
 
 *------STACK DECODER-------
 * Stack data starts from $FE0000,
 * and A6 will hold SSP.
 * Data will be stacked down.
-SSTACK	EQU		$FE0000
+SD		MOVE.W	(SP)+,D7
 		MOVEA.L	#SSTACK,A6
-SD		MOVE.W	(SP)+,D1
-* Some handling for first byte
-		ROL.B	#2,D1
-		CMP.B	#$04,D1
-		BLT		SD_ADD		
-		CMP.B	#$08,D1
+* Validity Check/Iteration Setting
+		CMP.W	#$4000,D7
+		BGT	SD_ERR
+		ROL.W	#5,D7
+		MOVE.B	D7,D5
+		LSL.B	#4,D5		
+		LSR.B	#4,D5		* D5 + 1 = Total Words to iterate in I/O Loop.
+		LSR.W	#5,D7
+		ROL.W	#8,D7
+		MOVE.B	D7,D6
+		LSL.B	#4,D6
+		LSR.B	#4,D6		* D6 = EA count
+		LSR.W	#8,D7
+
+* OP Code Decoder
+		JMP		SDOP
+
+* Size Decoder
+SDSIZE	LSL.B	#6,D7
+		CMP.B	#$40,D7
+		BEQ		SD_BYTE
+		CMP.B	#$80,D7
+		BEQ		SD_WORD
+		CMP.B	#$C0,D7
+		BEQ		SD_LWRD
+		JMP		SD_ERR
+SD_BYTE	MOVE.B	#$00,(A6)+
+		MOVE.B	#$09,(A6)+
+		JMP		SDEND
+SD_WORD	MOVE.B	#$01,(A6)+
+		MOVE.B	#$09,(A6)+
+		JMP		SDEND
+SD_LWRD	MOVE.B	#$02,(A6)+
+		MOVE.B	#$09,(A6)+
+		JMP		SDEND
+
+* EA Decoder
+
+* New Line		
+SDEND	MOVE.B	#$30,(A6)
+		MOVEA.L	#SSTACK,A5
+		JMP		SSD
+
+* Error Handler		
+SD_ERR	MOVE.B	#$31,(A6)+
+		JMP		SDEND
+*--------------------------
+*---STRING STACK DECODER---
+SSD		CMPA.L	A5,A6
+		BEQ		IOLOOP
+		MOVE.L	#$00000000,D7
+		MOVE.B	(A5)+,D7
+		MULU.W	#12,D7
+		ROL.L	#8,D7
+		ROL.L	#8,D7
+		MOVE.B	#$FD,D7
+		ROR.L	#8,D7
+		ROR.L	#8,D7
+		MOVE.L	D7,A4
+		JMP		(A4)
+*--------------------------
+
+*------------SDOP----------
+SDOP	ROL.B	#2,D7
+		CMP.B	#$04,D7
+		BLT		SD_ADD
+		CMP.B	#$08,D7
 		BLT		SD_ADDA
-		CMP.B	#$0C,D1
+		CMP.B	#$0C,D7
 		BLT		SD_ADDQ
-		CMP.B	#$10,D1
+		CMP.B	#$10,D7
 		BLT		SD_AND
-		CMP.B	#$14,D1
+		CMP.B	#$14,D7
 		BLT		SD_ASL
-		CMP.B	#$18,D1
+		CMP.B	#$18,D7
 		BLT		SD_ASR
-		CMP.B	#$1C,D1
+		CMP.B	#$1C,D7
 		BLT		SD_BRA
-		CMP.B	#$20,D1
+		CMP.B	#$20,D7
 		BLT		SD_BHI
-		CMP.B	#$24,D1
+		CMP.B	#$24,D7
 		BLT		SD_BNE
-		CMP.B	#$28,D1
+		CMP.B	#$28,D7
 		BLT		SD_BEQ
-		CMP.B	#$2C,D1
+		CMP.B	#$2C,D7
 		BLT		SD_BLT
-		CMP.B	#$30,D1
+		CMP.B	#$30,D7
 		BLT		SD_BTST
-		CMP.B	#$34,D1
+		CMP.B	#$34,D7
 		BLT		SD_CMP
-		CMP.B	#$38,D1
+		CMP.B	#$38,D7
 		BLT		SD_CMPA
-		CMP.B	#$3C,D1
+		CMP.B	#$3C,D7
 		BLT		SD_CMPI
-		CMP.B	#$40,D1
+		CMP.B	#$40,D7
 		BLT		SD_DIVS
-		CMP.B	#$44,D1
+		CMP.B	#$44,D7
 		BLT		SD_EOR
-		CMP.B	#$48,D1
+		CMP.B	#$48,D7
 		BLT		SD_EORI
-		CMP.B	#$4C,D1
+		CMP.B	#$4C,D7
 		BLT		SD_JSR
-		CMP.B	#$50,D1
+		CMP.B	#$50,D7
 		BLT		SD_LEA
-		CMP.B	#$54,D1
+		CMP.B	#$54,D7
 		BLT		SD_LSL
-		CMP.B	#$58,D1
+		CMP.B	#$58,D7
 		BLT		SD_LSR
-		CMP.B	#$5C,D1
+		CMP.B	#$5C,D7
 		BLT		SD_MOVE
-		CMP.B	#$60,D1
+		CMP.B	#$60,D7
 		BLT		SDMOVEA
-		CMP.B	#$64,D1
+		CMP.B	#$64,D7
 		BLT		SDMOVEM
-		CMP.B	#$68,D1
+		CMP.B	#$68,D7
 		BLT		SD_MULS
-		CMP.B	#$6C,D1
+		CMP.B	#$6C,D7
 		BLT		SD_NEG
-		CMP.B	#$70,D1
+		CMP.B	#$70,D7
 		BLT		SD_NOT
-		CMP.B	#$74,D1
+		CMP.B	#$74,D7
 		BLT		SD_ORI
-		CMP.B	#$78,D1
+		CMP.B	#$78,D7
 		BLT		SD_ROL
-		CMP.B	#$7C,D1
+		CMP.B	#$7C,D7
 		BLT		SD_ROR
-		CMP.B	#$80,D1
+		CMP.B	#$80,D7
 		BLT		SD_RTS
-		CMP.B	#$84,D1
-		BLT		SD_SUB		
-		CMP.B	#$88,D1
+		CMP.B	#$84,D7
+		BLT		SD_SUB
+		CMP.B	#$88,D7
 		BLT		SD_SUBA
-		CMP.B	#$8C,D1
+		CMP.B	#$8C,D7
 		BLT		SD_SUBI
-		CMP.B	#$8C,D1
+		CMP.B	#$8C,D7
 		BGT		SD_ERR
 
 SD_ADD	MOVE.B #$0C,(A6)+
@@ -443,48 +503,6 @@ SD_SUBA	MOVE.B #$0D,(A6)+
 		JMP SDSIZE
 SD_SUBI	MOVE.B #$3D,(A6)+
 		JMP SDSIZE
-
-SDSIZE	ROR.B	#2,D1
-		CMP.B	#$40,D1
-		BLT		SD_ERR
-		CMP.B	#$80,D1
-		BLT		SD_BYTE
-		CMP.B	#$C0,D1
-		BLT		SD_WORD
-		JMP		SD_LWRD
-SD_BYTE	MOVE.B	#$00,(A6)+
-		JMP SDEND
-SD_WORD	MOVE.B	#$01,(A6)+
-		JMP SDEND
-SD_LWRD	MOVE.B	#$02,(A6)+
-		JMP SDEND
-
-SDEND	MOVE.B	#$FF,(A6)+
-
-		LSL.B	#2,D1
-		LSR.B	#2,D1
-		
-*=== ERROR - Stack gives me value 0256 for Instruction MOVE.B D0, D1.
-		
-*SD_BYTE
-*SD_WORD
-*SD_LWRD
-SD_ERR
-*--------------------------
-
-*---STRING STACK DECODER---
-		MOVEA.L	#SSTACK,A5
-SSD		CMPA.L	A5,A6
-		BEQ		IOLOOP
-		MOVE.B	(A5)+,D7
-		MULU.W	#12,D7
-		ROL.L	#8,D7
-		ROL.L	#8,D7
-		MOVE.B	#$FD,D7
-		ROR.L	#8,D7
-		ROR.L	#8,D7
-		MOVE.L	D7,A4
-		JMP		(A4)
 *--------------------------
 OC_ERROR            MOVE.L  #$00FFFFFC, A7 ; Move the SP to the RTS value, effectively cleaning the stack.
                     MOVE.L  (SP)+, A6
@@ -3115,11 +3133,7 @@ GET_EA_OVERFLOW 	MOVE.B #ERR_STACK_OVERFLOW, -(SP)   ;Load the error constant
 		JMP		SPEM
 		LEA		S3F,A1
 		JMP		SPEM
-
-*---------GROUP SP---------
-		LEA		SFF,A1
-		JMP		SPEM
-		
+	
 SPEM	MOVE.B	#14,D0
 		TRAP	#15
 		JMP		SSD
@@ -3190,16 +3204,16 @@ S37		DC.B	')+',0
 S38		DC.B	'/',0
 S39		DC.B	',',0
 *---------Special---------
-SFF		DC.B	CR,LF,0	
+S09		DC.B	' ',0
+S30		DC.B	CR,LF,0
+S31		DC.B	'ERROR',0
 *---------Reserved--------
-S09		DC.B	'',0
 S28		DC.B	'',0
 S29		DC.B	'',0
-S30		DC.B	'',0
-S31		DC.B	'',0
 *---------AUX STR---------
 CR		EQU		$0D				* ASCII for Carriage Return
 LF		EQU		$0A				* ASCII for Line Feed
+SSTACK	EQU		$FE0000
 
 ;=================== Test Data ================================================
 TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
