@@ -259,7 +259,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     MOVEA.W #START_ADDRESS, A6
                     *MOVE.L  #BEQ_INSTR, (A6)
                     *MOVE.L  #ADD_INSTR, (A6)
-                    *MOVE.W  #MOVE_INSTR, (A6)
+                    MOVE.W  #MOVE_INSTR, (A6)
                     *MOVE.L  #MOVEA_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
@@ -279,12 +279,12 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #NEG_INSTR_DATA, (A6)
                     *MOVE.W  #NOT_INSTR, (A6)
                     *MOVE.W  #INVALID_INSTR, (A6)
-                    MOVE.W  #ROR_INSTR, (A6)
+                    *MOVE.W  #ROR_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
                     
-                    JSR     PROCESS_OC
+		JSR		PROCESS_OC
 
 *--------I/O MODULE--------
 		JMP		SD
@@ -300,7 +300,7 @@ SD		MOVE.W	(SP)+,D7
 		MOVEA.L	#SSTACK,A6
 * Validity Check/Iteration Setting
 		CMP.W	#$4000,D7
-		BGT	SD_ERR
+		BGT		SD_ERR
 		ROL.W	#5,D7
 		MOVE.B	D7,D5
 		LSL.B	#4,D5		
@@ -327,22 +327,35 @@ SDSIZE	LSL.B	#6,D7
 		BEQ		SD_LWRD
 		JMP		SD_ERR
 SD_NSZ	MOVE.B	#$09,(A6)+
-		JMP		SDEND
+		JMP		SDEA
 SD_BYTE	MOVE.B	#$00,(A6)+
 		MOVE.B	#$09,(A6)+
-		JMP		SDEND
+		JMP		SDEA
 SD_WORD	MOVE.B	#$01,(A6)+
 		MOVE.B	#$09,(A6)+
-		JMP		SDEND
+		JMP		SDEA
 SD_LWRD	MOVE.B	#$02,(A6)+
 		MOVE.B	#$09,(A6)+
-		JMP		SDEND
+		JMP		SDEA
 
 * EA Decoder
 SDEA	CMP.B	#0,D6
 		BEQ		SDEND
+		CMP.B	#2,D6
+		BGT		SD_ERR
+		MOVE.W	(SP)+,D7
+		* SDEA Process
+		MOVE.B	#$31,(A6)+
+		*-------------
+		CMP.B	#1,D6
+		BEQ		SDEND
+		MOVE.B	#$39,(A6)+
+		LSL		#8,D7
+		* SDEA Process
+		MOVE.B	#$31,(A6)+
+		*-------------
 		JMP		SDEND
-* New Line		
+* New Line
 SDEND	MOVE.B	#$30,(A6)
 		MOVEA.L	#SSTACK,A5
 		JMP		SSD
@@ -3412,6 +3425,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
