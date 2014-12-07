@@ -293,7 +293,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.W  #ROR_INSTR, (A6)
                     *MOVE.W  #ROL_MS_INSTR, (A6)
                     *MOVE.W  #LSL_ID_INSTR, (A6)
-                    MOVE.W  #ROR_ID_INSTR, (A6)
+                    *MOVE.W  #ROR_ID_INSTR, (A6)
                     
                     MOVEA.W #START_ADDRESS, A2
                     MOVEA.W A2, A3
@@ -3710,6 +3710,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
