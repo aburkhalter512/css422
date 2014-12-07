@@ -282,7 +282,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #LEA_INSTR, (A6)
                     *MOVE.L  #MULS_INSTR, (A6)
                     *MOVE.L  #ORI_INSTR, (A6)
-                    *MOVE.L  #SUBA_INSTR, (A6)
+                    MOVE.L  #SUBA_INSTR, (A6)
                     *MOVE.W  #SUBI_INSTR, (A6)+
                     *MOVE.L  #SUBI_INSTR_2, (A6)+
                     *MOVE.L  #SUBI_INSTR_3, (A6)
@@ -322,9 +322,9 @@ SD		MOVE.W	(SP)+,D7
 		CMP.W	#$4000,D7
 		BGT		SD_ERR
 		ROL.W	#5,D7
-		MOVE.B	D7,D5
-		LSL.B	#4,D5		
-		LSR.B	#4,D5		* D5 + 1 = Total Words to iterate in I/O Loop.
+		MOVE.B	D7,D4
+		LSL.B	#4,D4		
+		LSR.B	#4,D4		* D4 + 1 = Total Words to iterate in I/O Loop.
 		LSR.W	#5,D7
 		ROL.W	#8,D7
 		MOVE.B	D7,D6
@@ -347,33 +347,55 @@ SDSIZE	LSL.B	#6,D7
 		BEQ		SD_LWRD
 		JMP		SD_ERR
 SD_NSZ	MOVE.B	#$09,(A6)+
-		JMP		SDEA
+		JMP		SDEAD
 SD_BYTE	MOVE.B	#$00,(A6)+
 		MOVE.B	#$09,(A6)+
-		JMP		SDEA
+		JMP		SDEAD
 SD_WORD	MOVE.B	#$01,(A6)+
 		MOVE.B	#$09,(A6)+
-		JMP		SDEA
+		JMP		SDEAD
 SD_LWRD	MOVE.B	#$02,(A6)+
 		MOVE.B	#$09,(A6)+
-		JMP		SDEA
+		JMP		SDEAD
 
 * EA Decoder
-SDEA	CMP.B	#0,D6
+SDEAD	CMP.B	#0,D6
 		BEQ		SDEND
 		CMP.B	#2,D6
 		BGT		SD_ERR
-		MOVE.W	(SP)+,D7
-		* SDEA Process
-		MOVE.B	#$31,(A6)+
-		*-------------
+		MOVE.B	(SP)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
+		MOVE.B	(SP)+,D7
+		CMP.B	#2,D5
+		BEQ		SDDTB1
+		CMP.B	#3,D5
+		BEQ		SDDTW1
+		CMP.B	#5,D5
+		BEQ		SDDTL1
+SDDTB1	MOVE.B	(SP)+,D3		* D3 holds data
+		JMP		SDDTED1
+SDDTW1	MOVE.W	(SP)+,D3
+		JMP		SDDTED1
+SDDTL1	MOVE.L	(SP)+,D3
+		JMP		SDDTED1
+SDDTED1	JSR 	SDEA
 		CMP.B	#1,D6
 		BEQ		SDEND
-		MOVE.B	#$39,(A6)+
-		LSL		#8,D7
-		* SDEA Process
-		MOVE.B	#$31,(A6)+
-		*-------------
+		MOVE.B	#$29,(A6)+
+		MOVE.B	(SP)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
+		MOVE.B	(SP)+,D7
+		CMP.B	#2,D5
+		BEQ		SDDTB2
+		CMP.B	#3,D5
+		BEQ		SDDTW2
+		CMP.B	#5,D5
+		BEQ		SDDTL2
+SDDTB2	MOVE.B	(SP)+,D3		* D3 holds data
+		JMP		SDDTED2
+SDDTW2	MOVE.W	(SP)+,D3
+		JMP		SDDTED2
+SDDTL2	MOVE.L	(SP)+,D3
+		JMP		SDDTED2
+SDDTED2	JSR 	SDEA
 		JMP		SDEND
 * New Line
 SDEND	MOVE.B	#$30,(A6)
@@ -389,6 +411,8 @@ SSD		CMPA.L	A5,A6
 		BEQ		IOLOOP
 		MOVE.L	#$00000000,D7
 		MOVE.B	(A5)+,D7
+		CMP.B	#$FF,D7
+		BEQ		SSDDT
 		MULU.W	#12,D7
 		ROL.L	#8,D7
 		ROL.L	#8,D7
@@ -397,6 +421,7 @@ SSD		CMPA.L	A5,A6
 		ROR.L	#8,D7
 		MOVE.L	D7,A4
 		JMP		(A4)
+SSDDT	JMP		SSD
 *--------------------------
 
 *------------SDOP----------
@@ -564,6 +589,63 @@ SD_SUBA	MOVE.B #$0D,(A6)+
 SD_SUBI	MOVE.B #$3D,(A6)+
 		JMP SDSIZE
 *--------------------------
+*------------SDEA----------
+SDEA	CMP.B	#$80,D7			* Validity Check
+		BLT		SD_ERR
+		ROR.B	#3,D7
+		CMP.B	#$20,D7			* No Prefix
+		BLT		SD_NOP
+		CMP.B	#$40,D7			* Parenthesis
+		BLT		SD_PAR
+		CMP.B	#$60,D7			* Pre Decrement
+		BLT		SD_PRD
+		CMP.B	#$80,D7			* Post Increment
+		BLT		SD_POI
+		CMP.B	#$E0,D7			* Address
+		BLT		SD_ADR
+		CMP.B	#$F0,D7			* Data
+		BLT		SD_DAT
+		
+SDEATP	CMP.B	#1,D5
+		BNE		SDDATA
+		
+SDREG	LSL.B	#4,D7
+		LSR.B	#4,D7
+		CMP.B	#$07,D7
+		BGT		SDAR
+		ADD.B	#$10,D7			* Data Register
+		MOVE.B	D7,(A6)+
+		JMP		SDPARH
+SDAR	ADD.B	#$18,D7			* Address Register
+		MOVE.B	D7,(A6)+
+		JMP		SDPARH
+		
+SDDATA	MOVE.B	#$FF,(A6)+
+		JMP		SDPARH
+		
+SDPARH	CMP.B	#$FF,D4			* Parenthesis Handler
+		BNE		SDAPAR
+		RTS
+SDAPAR	MOVE.B	D4,(A6)+
+		RTS
+		
+SD_NOP	MOVE.B	#$FF,D4
+		JMP	SDEATP
+SD_PAR	MOVE.B	#$34,(A6)+
+		MOVE.B	#$35,D4
+		JMP	SDEATP
+SD_PRD	MOVE.B	#$36,(A6)+
+		MOVE.B	#$37,D4
+		JMP	SDEATP
+SD_POI	MOVE.B	#$38,(A6)+
+		MOVE.B	#$39,D4
+		JMP	SDEATP
+SD_ADR	MOVE.B	#$32,(A6)+
+		JMP	SDEATP
+SD_DAT	MOVE.B	#$33,(A6)+
+		JMP	SDEATP
+*--------------------------
+
 OC_ERROR            MOVE.L  #$00FFFFFC, A7 ; Move the SP to the RTS value, effectively cleaning the stack.
                     MOVE.L  (SP)+, A6
                     MOVE.B  #ERROR_MASK, -(SP)
@@ -3595,21 +3677,21 @@ S25		DC.B	'A5',0
 S26		DC.B	'A6',0
 S27		DC.B	'A7',0
 *-------Data Handler-------
-S32		DC.B	'#',0
+S32		DC.B	'$',0
 S33		DC.B	'#$',0
 S34		DC.B	'(',0
-S35		DC.B	'-(',0
-S36		DC.B	')',0
-S37		DC.B	')+',0
-S38		DC.B	'/',0
-S39		DC.B	',',0
+S35		DC.B	')',0
+S36		DC.B	'-(',0
+S37		DC.B	')',0
+S38		DC.B	'(',0
+S39		DC.B	')+',0
 *---------Special---------
 S09		DC.B	' ',0
+S29		DC.B	',',0
 S30		DC.B	CR,LF,0
 S31		DC.B	'ERROR',0
 *---------Reserved--------
 S28		DC.B	'',0
-S29		DC.B	'',0
 *---------AUX STR---------
 CR		EQU		$0D				* ASCII for Carriage Return
 LF		EQU		$0A				* ASCII for Line Feed
