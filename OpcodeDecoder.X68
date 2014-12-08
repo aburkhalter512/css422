@@ -277,7 +277,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
                     *MOVE.L  #AND_INSTR, (A6)
                     *MOVE.L  #CMPI_INSTR, (A6)
-                    *MOVE.L  #EORI_INSTR, (A6)
+                    *MOVE.L  #EOR_INSTR, (A6)
                     *MOVE.W  #DIVS_INSTR, (A6)
                     *MOVE.L  #LEA_INSTR, (A6)
                     *MOVE.L  #MULS_INSTR, (A6)
@@ -289,7 +289,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.W  #NEG_INSTR, (A6)+
                     *MOVE.L  #NEG_INSTR_DATA, (A6)
                     *MOVE.W  #NOT_INSTR, (A6)
-                    *MOVE.W  #INVALID_INSTR, (A6)
+                    MOVE.W  #INVALID_INSTR, (A6)
                     *MOVE.W  #ROR_INSTR, (A6)
                     *MOVE.W  #ROL_MS_INSTR, (A6)
                     *MOVE.W  #LSL_ID_INSTR, (A6)
@@ -318,7 +318,7 @@ IOLOOP	MOVE.B	#9,D0
 * Data will be stacked down.
 SD		MOVE.W	(SP)+,D7
 		MOVEA.L	#SSTACK,A6
-		CMP.W	#$4000,D7		* Validity Check/Iteration Setting
+		CMP.W	#$8000,D7		* Validity Check/Iteration Setting
 		BGT		SD_ERR
 		ROL.W	#5,D7
 		MOVE.B	D7,D4
@@ -358,6 +358,12 @@ SDEAD	CMP.B	#0,D6			* EA Decoder
 		BGT		SD_ERR
 		MOVE.B	(SP)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
 		MOVE.B	(SP)+,D7
+		MOVE.L	SP,A1
+		ADD.L	D5,A1
+		SUB.L	#1,A1
+		MOVE.B	(A1)+,D0
+		ADD.L	#1,A1		
+		MOVE.B	(A1),D1
 		CMP.B	#2,D5
 		BEQ		SDDTB1
 		CMP.B	#3,D5
@@ -377,24 +383,25 @@ SDDTED1	JSR 	SDEA
 		CMP.B	#1,D6
 		BEQ		SDEND
 		MOVE.B	#$29,(A6)+
-		MOVE.B	(SP)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
-		MOVE.B	(SP),D7
+		MOVE.B	D0,D5		* D5 - 1 = Total Bytes assigned for Data in stack
+		MOVE.B	D1,D7
+		
 		CMP.B	#2,D5
 		BEQ		SDDTB2
 		CMP.B	#3,D5
 		BEQ		SDDTW2
 		CMP.B	#5,D5
 		BEQ		SDDTL2
-SDDTB2	SUB.L	#2,SP
-		MOVE.B	(SP),D3			* D3 holds data
+SDDTB2	ADD.L	#2,A1
+		MOVE.B	(A1),D3			* D3 holds data
 		MOVE.B	#0,D2			* D2 holds size
 		JMP		SDDTED2
-SDDTW2	SUB.L	#2,SP
-		MOVE.W	(SP),D3			* D3 holds data
+SDDTW2	ADD.L	#2,A1
+		MOVE.W	(A1),D3			* D3 holds data
 		MOVE.B	#1,D2			* D2 holds size
 		JMP		SDDTED2
-SDDTL2	SUB.L	#2,SP
-		MOVE.L	(SP),D3			* D3 holds data
+SDDTL2	ADD.L	#2,A1
+		MOVE.L	(A1),D3			* D3 holds data
 		MOVE.B	#2,D2			* D2 holds size
 		JMP		SDDTED2
 SDDTED2	JSR 	SDEA
@@ -3820,6 +3827,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
