@@ -382,20 +382,24 @@ SDDTED1	JSR 	SDEA
 		BEQ		SDEND
 		MOVE.B	#$29,(A6)+
 		MOVE.B	(SP)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
-		MOVE.B	(SP)+,D7
+		MOVE.B	(SP),D7
 		CMP.B	#2,D5
 		BEQ		SDDTB2
 		CMP.B	#3,D5
 		BEQ		SDDTW2
 		CMP.B	#5,D5
 		BEQ		SDDTL2
-SDDTB2	MOVE.B	(SP)+,D3		* D3 holds data
+SDDTB2	SUB.L	#2,SP
+		MOVE.B	(SP),D3		* D3 holds data
 		JMP		SDDTED2
-SDDTW2	MOVE.W	(SP)+,D3
+SDDTW2	SUB.L	#2,SP
+		MOVE.W	(SP),D3
 		JMP		SDDTED2
-SDDTL2	MOVE.L	(SP)+,D3
+SDDTL2	SUB.L	#2,SP
+		MOVE.L	(SP),D3
 		JMP		SDDTED2
 SDDTED2	JSR 	SDEA
+		MOVE.L	#$00FFFFFF,SP	* Handles Stack Overflow
 		JMP		SDEND
 * New Line
 SDEND	MOVE.B	#$30,(A6)
@@ -3710,6 +3714,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
