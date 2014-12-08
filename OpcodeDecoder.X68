@@ -269,41 +269,42 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-                    MOVEA.W #START_ADDRESS, A6
+		MOVEA.W #START_ADDRESS, A6
 
-					MOVE.L  #BEQ_INSTR, (A6)+
-                    MOVE.L  #ADD_INSTR, (A6)+
-                    MOVE.W  #MOVE_INSTR, (A6)+
-                    MOVE.L  #MOVEA_INSTR, (A6)
-                    *MOVE.W  #RTS_INSTR, (A6)
-                    *MOVE.W  #JSR_INSTR_OC, (A6)+
-                    *MOVE.L  #JSR_INSTR_DATA, (A6)
-                    *MOVE.L  #AND_INSTR, (A6)
-                    *MOVE.L  #CMPI_INSTR, (A6)
-                    *MOVE.L  #EOR_INSTR, (A6)
-                    *MOVE.W  #DIVS_INSTR, (A6)
-                    *MOVE.L  #LEA_INSTR, (A6)
-                    *MOVE.L  #MULS_INSTR, (A6)
-                    *MOVE.L  #ORI_INSTR, (A6)
-                    *MOVE.L  #SUBA_INSTR, (A6)
-                    *MOVE.W  #SUBI_INSTR, (A6)+
-                    *MOVE.L  #SUBI_INSTR_2, (A6)+
-                    *MOVE.L  #SUBI_INSTR_3, (A6)
-                    *MOVE.W  #NEG_INSTR, (A6)+
-                    *MOVE.L  #NEG_INSTR_DATA, (A6)
-                    *MOVE.W  #NOT_INSTR, (A6)
-                    *MOVE.W  #INVALID_INSTR, (A6)
-                    *MOVE.W  #ROR_INSTR, (A6)
-                    *MOVE.W  #ROL_MS_INSTR, (A6)
-                    *MOVE.W  #LSL_ID_INSTR, (A6)
-                    *MOVE.W  #ROR_ID_INSTR, (A6)
-                    *
+		*MOVE.L  #BEQ_INSTR, (A6)+
+		*MOVE.W  #NEG_INSTR, (A6)+
+		*MOVE.L  #NEG_INSTR_DATA, (A6)+
+		*MOVE.W  #NOT_INSTR, (A6)+
+		*MOVE.W  #RTS_INSTR, (A6)+
+		*MOVE.W  #JSR_INSTR_OC, (A6)+
+		*MOVE.L  #JSR_INSTR_DATA, (A6)+
+		*MOVE.L  #LEA_INSTR, (A6)+
+		*MOVE.W  #INVALID_INSTR, (A6)
+		*MOVE.W  #SUBI_INSTR, (A6)+
+		*MOVE.L  #SUBI_INSTR_2, (A6)+
+		*MOVE.L  #SUBI_INSTR_3, (A6)+
+		
+		MOVE.L  #CMPI_INSTR, (A6)+
+		MOVE.L  #ORI_INSTR, (A6)+        
+		MOVE.L  #ADD_INSTR, (A6)+
+		MOVE.W  #MOVE_INSTR, (A6)+
+		MOVE.L  #MOVEA_INSTR, (A6)+
+		MOVE.L  #AND_INSTR, (A6)+
+		MOVE.L  #EOR_INSTR, (A6)+
+		MOVE.W  #DIVS_INSTR, (A6)+
+		MOVE.L  #MULS_INSTR, (A6)+
+		MOVE.L  #SUBA_INSTR, (A6)+
+		MOVE.W  #ROR_INSTR, (A6)+
+		MOVE.W  #ROL_MS_INSTR, (A6)+
+		MOVE.W  #LSL_ID_INSTR, (A6)+
+		MOVE.W  #ROR_ID_INSTR, (A6)
+                    
                                         
-                    * Adding this in to test PROCESS_OC.
-                    * Please comment it out to test I/O.
-                    * DO NOT remove.
-                    *MOVE.B  #9, D0
-                    *TRAP    #15
+		* Adding this in to test PROCESS_OC.
+		* Please comment it out to test I/O.
+		* DO NOT remove.
+		*MOVE.B  #9, D0
+		*TRAP    #15
 *==============================
 *----------I/O MODULE----------
 *==============================
@@ -368,6 +369,7 @@ SDEAD	MOVE.B	#$00,D4
 		CMP.B	#2,D6
 		BGT		SD_ERR
 		MOVE.L	SP,A1
+		CLR		D5
 		MOVE.B	(A1)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
 		ADD.L	#1,A1
 		MOVE.B	(A1)+,D7
@@ -385,20 +387,20 @@ SDEAD	MOVE.B	#$00,D4
 		BEQ		SDDTW1
 		CMP.B	#5,D5
 		BEQ		SDDTL1
-SDDTB1	MOVE.B	(A1)+,D3		* D3 holds data
+SDDTB1	MOVE.B	(A1),D3			* D3 holds data
 		MOVE.B	#0,D2			* D2 holds size
 		JMP		SDDTED1
-SDDTW1	MOVE.W	(A1)+,D3		* D3 holds data
+SDDTW1	MOVE.W	(A1),D3			* D3 holds data
 		MOVE.B	#1,D2			* D2 holds size
 		JMP		SDDTED1
-SDDTL1	MOVE.L	(A1)+,D3		* D3 holds data
+SDDTL1	MOVE.L	(A1),D3			* D3 holds data
 		MOVE.B	#2,D2			* D2 holds size
 		JMP		SDDTED1
 SDDTED1	JSR 	SDEA
 		CMP.B	#1,D6
 		BEQ		SDEND
 		MOVE.B	#$29,(A6)+
-		MOVE.B	D0,D5		* D5 - 1 = Total Bytes assigned for Data in stack
+		MOVE.B	D0,D5			* D5 - 1 = Total Bytes assigned for Data in stack
 		MOVE.B	D1,D7
 		
 		CMP.B	#2,D5
@@ -407,14 +409,15 @@ SDDTED1	JSR 	SDEA
 		BEQ		SDDTW2
 		CMP.B	#5,D5
 		BEQ		SDDTL2
-SDDTB2	MOVE.B	(A1)+,D3			* D3 holds data
-		MOVE.B	#0,D2			* D2 holds size
-		JMP		SDDTED2
-SDDTW2	MOVE.W	(A1)+,D3			* D3 holds data
+		ADD.L	D2,A1
+SDDTB2	MOVE.B	(A1),D3			* D3 holds data
 		MOVE.B	#1,D2			* D2 holds size
 		JMP		SDDTED2
-SDDTL2	MOVE.L	(A1)+,D3			* D3 holds data
+SDDTW2	MOVE.W	(A1),D3			* D3 holds data
 		MOVE.B	#2,D2			* D2 holds size
+		JMP		SDDTED2
+SDDTL2	MOVE.L	(A1),D3			* D3 holds data
+		MOVE.B	#4,D2			* D2 holds size
 		JMP		SDDTED2
 SDDTED2	JSR 	SDEA
 		MOVE.L	#$00FFFFFF,SP	* Handles Stack Overflow
@@ -745,11 +748,11 @@ SDREG	LSL.B	#4,D7
 SDAR	ADD.B	#$18,D7			* Address Register
 		MOVE.B	D7,(A6)+
 		JMP		SDPARH
-SDDATA	CMP.B	#0,D2			* Data Handler
+SDDATA	CMP.B	#1,D2			* Data Handler
 		BEQ		SDDTB
-		CMP.B	#1,D2
-		BEQ		SDDTW
 		CMP.B	#2,D2
+		BEQ		SDDTW
+		CMP.B	#4,D2
 		BEQ		SDDTL
 SDDTB	MOVE.B	#$FF,(A6)+
 		MOVE.B	D3,(A6)+
@@ -3858,6 +3861,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
