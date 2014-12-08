@@ -289,7 +289,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.W  #NEG_INSTR, (A6)+
                     *MOVE.L  #NEG_INSTR_DATA, (A6)
                     *MOVE.W  #NOT_INSTR, (A6)
-                    MOVE.W  #INVALID_INSTR, (A6)
+                    *MOVE.W  #INVALID_INSTR, (A6)
                     *MOVE.W  #ROR_INSTR, (A6)
                     *MOVE.W  #ROL_MS_INSTR, (A6)
                     *MOVE.W  #LSL_ID_INSTR, (A6)
@@ -318,8 +318,8 @@ IOLOOP	MOVE.B	#9,D0
 * Data will be stacked down.
 SD		MOVE.W	(SP)+,D7
 		MOVEA.L	#SSTACK,A6
-		CMP.W	#$8000,D7		* Validity Check/Iteration Setting
-		BGT		SD_ERR
+		CMP.W	#$0000,D7		* Validity Check/Iteration Setting
+		BLT		SD_ERR
 		ROL.W	#5,D7
 		MOVE.B	D7,D4
 		LSL.B	#4,D4		
@@ -410,7 +410,26 @@ SDDTED2	JSR 	SDEA
 SDEND	MOVE.B	#$30,(A6)		* Line Feeding
 		MOVEA.L	#SSTACK,A5
 		JMP		SSD
-SD_ERR	MOVE.B	#$31,(A6)+		* Error Handler
+SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
+		MOVE.L	A2,D7
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		MOVE.B	#$09,(A6)+
+		MOVE.B	#$31,(A6)+
+		MOVE.B	#$09,(A6)+
+		MOVE.B	#$32,(A6)+
+		MOVE.B	#$FE,(A6)+
+		MOVE.W	(A2),D7
+		ROL.W	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.W	#8,D7
+		MOVE.B	D7,(A6)+
 		JMP		SDEND
 
 *-----STRING STACK DECODER-----
@@ -513,8 +532,8 @@ SSDHEX	CMP.B	#$9,D7
 		MOVE.B	#6,D0
 		TRAP	#15
 		RTS
-SSDAF	ADD.B	#$31,D6
-		MOVE.B	D6,D1
+SSDAF	ADD.B	#$37,D7
+		MOVE.B	D7,D1
 		MOVE.B	#6,D0
 		TRAP	#15
 		RTS
@@ -3827,6 +3846,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
