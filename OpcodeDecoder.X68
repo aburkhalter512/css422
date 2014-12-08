@@ -280,7 +280,7 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.L  #EORI_INSTR, (A6)
                     *MOVE.W  #DIVS_INSTR, (A6)
                     *MOVE.L  #LEA_INSTR, (A6)
-                    MOVE.L  #MULS_INSTR, (A6)
+                    *MOVE.L  #MULS_INSTR, (A6)
                     *MOVE.L  #ORI_INSTR, (A6)
                     *MOVE.L  #SUBA_INSTR, (A6)
                     *MOVE.W  #SUBI_INSTR, (A6)+
@@ -683,17 +683,17 @@ SD_SUBI	MOVE.B #$3D,(A6)+
 SDEA	CMP.B	#$80,D7			* Validity Check
 		BLT		SD_ERR
 		ROR.B	#3,D7
-		CMP.B	#$20,D7			* No Prefix
+		CMP.B	#$00,D7			* No Prefix
 		BEQ		SD_NOP
-		CMP.B	#$40,D7			* Parenthesis
+		CMP.B	#$20,D7			* Parenthesis
 		BEQ		SD_PAR
-		CMP.B	#$60,D7			* Pre Decrement
+		CMP.B	#$40,D7			* Pre Decrement
 		BEQ		SD_PRD
-		CMP.B	#$80,D7			* Post Increment
+		CMP.B	#$60,D7			* Post Increment
 		BEQ		SD_POI
-		CMP.B	#$E0,D7			* Address
+		CMP.B	#$80,D7			* Address
 		BEQ		SD_ADR
-		CMP.B	#$F0,D7			* Data
+		CMP.B	#$E0,D7			* Data
 		BEQ		SD_DAT
 SDEATP	CMP.B	#1,D5
 		BNE		SDDATA
