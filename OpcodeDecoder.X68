@@ -264,14 +264,16 @@ TBL_MASK_SUB_DST    EQU     %01111100
 TBL_MASK_SUBA       EQU     %11111111
 TBL_MASK_SUBI       EQU     %01111101
 
+* Iterator
+ITE		EQU		$FDFFFF
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
-                    *MOVE.L  #BEQ_INSTR, (A6)
-                    *MOVE.L  #ADD_INSTR, (A6)
-                    *MOVE.W  #MOVE_INSTR, (A6)
-                    *MOVE.L  #MOVEA_INSTR, (A6)
+
+                    MOVE.L  #ADD_INSTR, (A6)+
+                    MOVE.W  #MOVE_INSTR, (A6)+
+                    MOVE.L  #MOVEA_INSTR, (A6)
                     *MOVE.W  #RTS_INSTR, (A6)
                     *MOVE.W  #JSR_INSTR_OC, (A6)+
                     *MOVE.L  #JSR_INSTR_DATA, (A6)
@@ -294,12 +296,8 @@ TBL_MASK_SUBI       EQU     %01111101
                     *MOVE.W  #ROL_MS_INSTR, (A6)
                     *MOVE.W  #LSL_ID_INSTR, (A6)
                     *MOVE.W  #ROR_ID_INSTR, (A6)
-                    
-                    MOVEA.W #START_ADDRESS, A2
-                    MOVEA.W A2, A3
-                    
-                    JSR		PROCESS_OC
-                    
+                    *MOVE.L  #BEQ_INSTR, (A6)+
+                                        
                     * Adding this in to test PROCESS_OC.
                     * Please comment it out to test I/O.
                     * DO NOT remove.
@@ -308,8 +306,17 @@ TBL_MASK_SUBI       EQU     %01111101
 *==============================
 *----------I/O MODULE----------
 *==============================
+		MOVE.B	#$00,ITE
+		MOVEA.W	#START_ADDRESS,A2	* Start Addr
+		MOVEA.W	A6,A3				* End Addr
+IOLOOP	MOVE.B	(ITE),D4
+		ADD.L	D4,A2
+		ADD.L	D4,A2
+		CMPA.L	A3,A2
+		BGT		IOEND
+		JSR		PROCESS_OC
 		JMP		SD
-IOLOOP	MOVE.B	#9,D0
+IOEND	MOVE.B	#9,D0
 		TRAP	#15
 
 *--------STACK DECODER---------
@@ -323,7 +330,9 @@ SD		MOVE.W	(SP)+,D7
 		ROL.W	#5,D7
 		MOVE.B	D7,D4
 		LSL.B	#4,D4		
-		LSR.B	#4,D4			* D4 + 1 = Total Words to iterate in I/O Loop.
+		LSR.B	#4,D4
+		MOVE.B	D4,(ITE)
+		ADD.B	#1,(ITE)		* ITE = Total Words to iterate in I/O Loop.
 		LSR.W	#5,D7
 		ROL.W	#8,D7
 		MOVE.B	D7,D6
@@ -352,7 +361,8 @@ SD_WORD	MOVE.B	#$01,(A6)+
 SD_LWRD	MOVE.B	#$02,(A6)+
 		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
-SDEAD	CMP.B	#0,D6			* EA Decoder
+SDEAD	MOVE.B	#$00,D4
+		CMP.B	#0,D6			* EA Decoder
 		BEQ		SDEND
 		CMP.B	#2,D6
 		BGT		SD_ERR
@@ -435,8 +445,8 @@ SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
 *-----STRING STACK DECODER-----
 * Prints strings using String Stack
 SSD		MOVE.L	#$00000000,SP
-		CMPA.L	A5,A6
-		BEQ		IOLOOP
+		CMPA.L	A6,A5
+		BGT		IOLOOP
 		MOVE.L	#$00000000,D7
 		MOVE.B	(A5)+,D7
 		CMP.B	#$FF,D7
@@ -629,22 +639,22 @@ SD_ASR	MOVE.B #$1B,(A6)+
 		JMP SDSIZE
 SD_BRA	MOVE.B #$07,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_BHI	MOVE.B #$06,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_BNE	MOVE.B #$04,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_BEQ	MOVE.B #$03,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_BLT	MOVE.B #$05,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_BTST	MOVE.B #$2A,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_CMP	MOVE.B #$0B,(A6)+
 		JMP SDSIZE
 SD_CMPA	MOVE.B #$0B,(A6)+
@@ -660,10 +670,10 @@ SD_EORI	MOVE.B #$3E,(A6)+
 		JMP SDSIZE
 SD_JSR	MOVE.B #$2B,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_LEA	MOVE.B #$2D,(A6)+
 		MOVE.B #$09,(A6)+
-		JMP SDEA
+		JMP SDEAD
 SD_LSL	MOVE.B #$1A,(A6)+
 		MOVE.B #$19,(A6)+
 		JMP SDSIZE
@@ -709,18 +719,18 @@ SD_SUBI	MOVE.B #$3D,(A6)+
 SDEA	CMP.B	#$80,D7			* Validity Check
 		BLT		SD_ERR
 		ROR.B	#3,D7
-		CMP.B	#$00,D7			* No Prefix
-		BEQ		SD_NOP
-		CMP.B	#$20,D7			* Parenthesis
-		BEQ		SD_PAR
-		CMP.B	#$40,D7			* Pre Decrement
-		BEQ		SD_PRD
-		CMP.B	#$60,D7			* Post Increment
-		BEQ		SD_POI
-		CMP.B	#$80,D7			* Address
-		BEQ		SD_ADR
-		CMP.B	#$E0,D7			* Data
-		BEQ		SD_DAT
+		CMP.B	#$B0,D7			* Address
+		BLT		SD_ADR
+		CMP.B	#$F0,D7			* Data
+		BLT		SD_DAT
+		CMP.B	#$10,D7			* No Prefix
+		BLT		SD_NOP
+		CMP.B	#$30,D7			* Parenthesis
+		BLT		SD_PAR
+		CMP.B	#$50,D7			* Pre Decrement
+		BLT		SD_PRD
+		CMP.B	#$70,D7			* Post Increment
+		BLT		SD_POI
 SDEATP	CMP.B	#1,D5
 		BNE		SDDATA
 SDREG	LSL.B	#4,D7
@@ -749,13 +759,13 @@ SDDTW	MOVE.B	#$FE,(A6)+		* Data
 		MOVE.B	D3,(A6)+
 		JMP		SDPARH
 SDDTL	MOVE.B	#$FD,(A6)+		* Data
-		ROL.W	#8,D3
+		ROL.L	#8,D3
 		MOVE.B	D3,(A6)+
-		ROL.W	#8,D3
+		ROL.L	#8,D3
 		MOVE.B	D3,(A6)+
-		ROL.W	#8,D3
+		ROL.L	#8,D3
 		MOVE.B	D3,(A6)+
-		ROL.W	#8,D3
+		ROL.L	#8,D3
 		MOVE.B	D3,(A6)+
 		JMP		SDPARH
 SDPARH	CMP.B	#$FF,D4			* Parenthesis Handler
