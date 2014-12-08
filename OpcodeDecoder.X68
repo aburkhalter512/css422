@@ -271,6 +271,7 @@ ITE		EQU		$FDFFFF
 * =============================================================================
                     MOVEA.W #START_ADDRESS, A6
 
+					MOVE.L  #BEQ_INSTR, (A6)+
                     MOVE.L  #ADD_INSTR, (A6)+
                     MOVE.W  #MOVE_INSTR, (A6)+
                     MOVE.L  #MOVEA_INSTR, (A6)
@@ -296,7 +297,7 @@ ITE		EQU		$FDFFFF
                     *MOVE.W  #ROL_MS_INSTR, (A6)
                     *MOVE.W  #LSL_ID_INSTR, (A6)
                     *MOVE.W  #ROR_ID_INSTR, (A6)
-                    *MOVE.L  #BEQ_INSTR, (A6)+
+                    *
                                         
                     * Adding this in to test PROCESS_OC.
                     * Please comment it out to test I/O.
@@ -366,27 +367,31 @@ SDEAD	MOVE.B	#$00,D4
 		BEQ		SDEND
 		CMP.B	#2,D6
 		BGT		SD_ERR
-		MOVE.B	(SP)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
-		MOVE.B	(SP)+,D7
 		MOVE.L	SP,A1
+		MOVE.B	(A1)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
+		ADD.L	#1,A1
+		MOVE.B	(A1)+,D7
+		ADD.L	#1,A1
 		ADD.L	D5,A1
 		SUB.L	#1,A1
 		MOVE.B	(A1)+,D0
-		ADD.L	#1,A1		
+		ADD.L	#1,A1
 		MOVE.B	(A1),D1
+		MOVE.L	SP,A1
+		ADD.L	#4,A1
 		CMP.B	#2,D5
 		BEQ		SDDTB1
 		CMP.B	#3,D5
 		BEQ		SDDTW1
 		CMP.B	#5,D5
 		BEQ		SDDTL1
-SDDTB1	MOVE.B	(SP)+,D3		* D3 holds data
+SDDTB1	MOVE.B	(A1)+,D3		* D3 holds data
 		MOVE.B	#0,D2			* D2 holds size
 		JMP		SDDTED1
-SDDTW1	MOVE.W	(SP)+,D3		* D3 holds data
+SDDTW1	MOVE.W	(A1)+,D3		* D3 holds data
 		MOVE.B	#1,D2			* D2 holds size
 		JMP		SDDTED1
-SDDTL1	MOVE.L	(SP)+,D3		* D3 holds data
+SDDTL1	MOVE.L	(A1)+,D3		* D3 holds data
 		MOVE.B	#2,D2			* D2 holds size
 		JMP		SDDTED1
 SDDTED1	JSR 	SDEA
@@ -402,16 +407,13 @@ SDDTED1	JSR 	SDEA
 		BEQ		SDDTW2
 		CMP.B	#5,D5
 		BEQ		SDDTL2
-SDDTB2	ADD.L	#2,A1
-		MOVE.B	(A1),D3			* D3 holds data
+SDDTB2	MOVE.B	(A1)+,D3			* D3 holds data
 		MOVE.B	#0,D2			* D2 holds size
 		JMP		SDDTED2
-SDDTW2	ADD.L	#2,A1
-		MOVE.W	(A1),D3			* D3 holds data
+SDDTW2	MOVE.W	(A1)+,D3			* D3 holds data
 		MOVE.B	#1,D2			* D2 holds size
 		JMP		SDDTED2
-SDDTL2	ADD.L	#2,A1
-		MOVE.L	(A1),D3			* D3 holds data
+SDDTL2	MOVE.L	(A1)+,D3			* D3 holds data
 		MOVE.B	#2,D2			* D2 holds size
 		JMP		SDDTED2
 SDDTED2	JSR 	SDEA
@@ -3856,6 +3858,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
