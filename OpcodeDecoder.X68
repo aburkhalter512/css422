@@ -271,21 +271,21 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 		MOVEA.W #START_ADDRESS, A6
 
-		MOVE.L  #ADD_INSTR,(A6)+	* ADD.B $5000,D1
-		MOVE.L  #ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
+		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
+		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
 		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
 		MOVE.W	#ASL_INSTR,(A6)+	* ASL.B D4,D2
 		MOVE.W	#ASL_MS_INSTR,(A6)+	* ASL.W (A5)
 		MOVE.W	#ASR_INSTR,(A6)+	* ASR.W D6,D0
 		MOVE.W	#ASR_MS_INSTR,(A6)+	* ASR.W (A5)
-		*MOVE.L  #BEQ_INSTR,(A6)+
-		MOVE.L  #BRA_INSTR,(A6)+	* BRA.W 4
-		*MOVE.L  #CMPI_INSTR,(A6)+	* CMPI.W #$0005,D7
-		*MOVE.W  #DIVS_INSTR,(A6)+	* DIVS.W D0,D4
-		*MOVE.L  #EOR_INSTR,(A6)+	* EOR.W D2,$6000
-		*MOVE.L  #EORI_INSTR,(A6)+	* EORI.W #7,D1
-		*MOVE.W  #JSR_INSTR_OC,(A6)+	* JSR $0000101A
-		*MOVE.L  #JSR_INSTR_DATA,(A6)+
+		MOVE.L	#BEQ_INSTR,(A6)+
+		MOVE.L	#BRA_INSTR,(A6)+	* BRA.W 4
+		MOVE.L	#CMPI_INSTR,(A6)+	* CMPI.W #$0005,D7
+		MOVE.W	#DIVS_INSTR,(A6)+	* DIVS.W D0,D4
+		MOVE.L	#EOR_INSTR,(A6)+	* EOR.W D2,$6000
+		MOVE.L	#EORI_INSTR,(A6)+	* EORI.W #7,D1
+		MOVE.W	#JSR_INSTR_OC,(A6)+	* JSR $0000101A
+		MOVE.L	#JSR_INSTR_DATA,(A6)+
 		MOVE.L  #LEA_INSTR,(A6)+	* LEA $5000,A5
 		MOVE.W  #LSL_ID_INSTR,(A6)+ * LSL.L #8, D7
 		MOVE.W	#LSL_INSTR,(A6)+	* LSL.W D5,D1
@@ -293,8 +293,8 @@ ITE		EQU		$FDFFFF
 		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
 		MOVE.L  #MOVEA_INSTR,(A6)+	* MOVEA.W #$4000,A2
 		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
-		*MOVE.W  #NEG_INSTR,(A6)+	* NEG.W $8000
-		*MOVE.L  #NEG_INSTR_DATA,(A6)+
+		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $8000
+		MOVE.L	#NEG_INSTR_DATA,(A6)+
 		MOVE.W  #NOT_INSTR, (A6)+	* NOT.L D5
 		MOVE.L  #ORI_INSTR,(A6)+	* ORI.B #$36,D3
 		MOVE.W  #ROL_INSTR,(A6)+	* ROL.B D2,D5
@@ -331,6 +331,7 @@ IOLOOP	MOVE.B	(ITE),D4
 		ADD.L	D4,A2
 		CMPA.L	A3,A2
 		BGT		IOEND
+		MOVE.L	#$0,SP
 		JSR		PROCESS_OC
 		JMP		SD
 IOEND	MOVE.B	#9,D0
@@ -345,16 +346,16 @@ SD		MOVE.W	(SP)+,D7
 		CMP.W	#$0000,D7		* Validity Check/Iteration Setting
 		BLT		SD_ERR
 		ROL.W	#5,D7
-		MOVE.B	D7,D4
-		LSL.B	#4,D4		
-		LSR.B	#4,D4
-		MOVE.B	D4,(ITE)
+		MOVE.B	D7,D6
+		LSL.B	#5,D6		
+		LSR.B	#5,D6
+		MOVE.B	D6,(ITE)
 		ADD.B	#1,(ITE)		* ITE = Total Words to iterate in I/O Loop.
 		LSR.W	#5,D7
 		ROL.W	#8,D7
 		MOVE.B	D7,D6
-		LSL.B	#4,D6
-		LSR.B	#4,D6			* D6 = EA count
+		LSL.B	#6,D6
+		LSR.B	#6,D6			* D6 = EA count
 		LSR.W	#8,D7
 		JMP		SDOP			* OP Code Decoder
 SDSIZE	LSL.B	#6,D7			* Size Decoder
@@ -378,8 +379,9 @@ SD_WORD	MOVE.B	#$01,(A6)+
 SD_LWRD	MOVE.B	#$02,(A6)+
 		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
-SDEAD	CLR		D0			* EA Decoder
-		CLR		D1
+SDEAD	CLR		D1				* EA Decoder
+		CLR		D2
+		CLR		D3
 		CLR		D4
 		CLR		D5
 		CLR		D7
@@ -388,14 +390,13 @@ SDEAD	CLR		D0			* EA Decoder
 		CMP.B	#2,D6
 		BGT		SD_ERR
 		MOVE.L	SP,A1
-		CLR		D5
 		MOVE.B	(A1)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
 		ADD.L	#1,A1
 		MOVE.B	(A1)+,D7
 		ADD.L	D5,A1
-		MOVE.B	(A1)+,D0
-		ADD.L	#1,A1
 		MOVE.B	(A1)+,D1
+		ADD.L	#1,A1
+		MOVE.B	(A1)+,D2
 		MOVE.L	A1,A0
 		MOVE.L	SP,A1
 		CMP.B	#1,D5
@@ -417,8 +418,10 @@ SDDTED1	JSR 	SDEA
 		CMP.B	#1,D6
 		BEQ		SDEND
 		MOVE.B	#$29,(A6)+
-		MOVE.B	D0,D5			* D5 - 1 = Total Bytes assigned for Data in stack
-		MOVE.B	D1,D7
+		MOVE.B	D1,D5			* D5 - 1 = Total Bytes assigned for Data in stack
+		MOVE.B	D2,D7
+		CLR		D1
+		CLR		D2
 		CMP.B	#1,D5
 		BEQ		SDDTED2
 		ADD.L	#1,A0
