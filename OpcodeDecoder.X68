@@ -322,18 +322,14 @@ ITE		EQU		$FDFFFF
 		*MOVE.B  #9, D0
 		*TRAP    #15
 *==============================
-*--------Display Module--------
-*==============================
-
-*==============================
 *----------I/O MODULE----------
 *==============================
 		MOVE.B	#$0,ITE
 		MOVE.B	#$0,DPCT
 		MOVEA.W	#START_ADDRESS,A2	* Start Addr
 		MOVEA.W	A6,A3				* End Addr
-IOLOOP	CMP.B	#$1F,DPCT
-		BEQ		IOEND
+IOLOOP	CMP.B	#$17,DPCT
+		BEQ		DPLOOP
 		ADD.B	#1,DPCT
 		MOVE.B	(ITE),D4
 		ADD.L	D4,A2
@@ -823,7 +819,22 @@ SD_ADR	MOVE.B	#$32,(A6)+
 SD_DAT	MOVE.B	#$33,(A6)+
 		MOVE.B	#$FF,D4
 		JMP	SDEATP
+
 *==============================
+*--------Display Module--------
+*==============================
+DPLOOP	MOVE.B	#$0,DPCT
+		MOVE.B	#0,D1
+		MOVE.B	#12,D0
+		TRAP	#15
+		MOVE.B	#5,D0
+		TRAP	#15
+		CMP.B	#$D,D1
+		BNE		DPLOOP
+		MOVE.W	#$FF00,D1
+		MOVE.B	#11,D0
+		TRAP	#15
+		JMP		IOLOOP
 
 OC_ERROR            MOVE.L  #$00FFFFFC, A7 ; Move the SP to the RTS value, effectively cleaning the stack.
                     MOVE.L  (SP)+, A6
@@ -3890,6 +3901,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
