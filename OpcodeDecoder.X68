@@ -307,9 +307,9 @@ ITE		EQU		$FDFFFF
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
 		* DO NOT remove.
-		JSR		PROCESS_OC
-		MOVE.B  #9, D0
-		TRAP    #15
+		*JSR		PROCESS_OC
+		*MOVE.B  #9, D0
+		*TRAP    #15
 *==============================
 *----------I/O MODULE----------
 *==============================
@@ -3867,6 +3867,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
