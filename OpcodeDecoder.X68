@@ -280,31 +280,36 @@ ITE		EQU		$FDFFFF
 		*MOVE.L  #JSR_INSTR_DATA, (A6)+
 		*MOVE.L  #LEA_INSTR, (A6)+
 		*MOVE.W  #INVALID_INSTR, (A6)
-		*MOVE.W  #SUBI_INSTR, (A6)+
-		*MOVE.L  #SUBI_INSTR_2, (A6)+
-		*MOVE.L  #SUBI_INSTR_3, (A6)+
+		MOVE.W  #SUBI_INSTR, (A6)+
+		MOVE.L  #SUBI_INSTR_2, (A6)+
+		MOVE.L  #SUBI_INSTR_3, (A6)
 		
-		MOVE.L  #CMPI_INSTR, (A6)+
-		MOVE.L  #ORI_INSTR, (A6)+        
-		MOVE.L  #ADD_INSTR, (A6)+
-		MOVE.W  #MOVE_INSTR, (A6)+
-		MOVE.L  #MOVEA_INSTR, (A6)+
-		MOVE.L  #AND_INSTR, (A6)+
-		MOVE.L  #EOR_INSTR, (A6)+
-		MOVE.W  #DIVS_INSTR, (A6)+
-		MOVE.L  #MULS_INSTR, (A6)+
-		MOVE.L  #SUBA_INSTR, (A6)+
-		MOVE.W  #ROR_INSTR, (A6)+
-		MOVE.W  #ROL_MS_INSTR, (A6)+
-		MOVE.W  #LSL_ID_INSTR, (A6)+
-		MOVE.W  #ROR_ID_INSTR, (A6)
-                    
+		*MOVE.L  #CMPI_INSTR, (A6)+
+		*MOVE.L  #ORI_INSTR, (A6)+        
+		*MOVE.L  #ADD_INSTR, (A6)+
+		*MOVE.W  #MOVE_INSTR, (A6)+
+		*MOVE.L  #MOVEA_INSTR, (A6)+
+		*MOVE.L  #AND_INSTR, (A6)+
+		*MOVE.L  #EOR_INSTR, (A6)+
+		*MOVE.W  #DIVS_INSTR, (A6)+
+		*MOVE.L  #MULS_INSTR, (A6)+
+		*MOVE.L  #SUBA_INSTR, (A6)+
+		*MOVE.W  #ROR_INSTR, (A6)+
+		*MOVE.W  #ROL_MS_INSTR, (A6)+
+		*MOVE.W  #LSL_ID_INSTR, (A6)+
+		*MOVE.W  #ROR_ID_INSTR, (A6)
+		
+		* DON'T REMOVE THESE 2 LINES!
+		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
+        MOVEA.W #START_ADDRESS, A2
+        MOVEA.W A2, A3
                                         
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
 		* DO NOT remove.
-		*MOVE.B  #9, D0
-		*TRAP    #15
+		JSR		PROCESS_OC
+		MOVE.B  #9, D0
+		TRAP    #15
 *==============================
 *----------I/O MODULE----------
 *==============================
@@ -1065,6 +1070,7 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
                     MOVE.B  (SP)+, D1   ; Get the source eaType from the stack.
                     
                     SUBI.B  #1, D0      ; Return size - 1 is the amount of source data on the stack.
+                    MOVE.B  D0, D6      ; Put the destination offset in the appropriate register.
                     
                     JSR     OC_XDFS
                     
@@ -3117,12 +3123,12 @@ PROCESS_SUBI_OC     MOVE.L  (SP)+, D0
                     MOVE.B  D1, D2
                     
                     * Source Mode
-                    MOVE.B  #7, D3
+                    MOVE.B  #EA_MODE_DATA, D3
                     LSL.B   #5, D3
                     OR.B    D3, D1
                     
                     * Source Register
-                    MOVE.B  #4, D3
+                    MOVE.B  #EA_DATA_REG, D3
                     OR.B    D3, D1
                     
                     * Destination Mode
@@ -3861,6 +3867,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
