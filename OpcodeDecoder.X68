@@ -270,7 +270,7 @@ ITE		EQU		$FDFFFF
 * ================== Begin Program ============================================
 * =============================================================================
 		MOVEA.W #START_ADDRESS, A6
-
+		
 		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
 		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
 		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
@@ -295,7 +295,7 @@ ITE		EQU		$FDFFFF
 		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
 		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $8000
 		MOVE.L	#NEG_INSTR_DATA,(A6)+
-		MOVE.W  #NOT_INSTR, (A6)+	* NOT.L D5
+		MOVE.W  #NOT_INSTR, (A6)	* NOT.L D5
 		MOVE.L  #ORI_INSTR,(A6)+	* ORI.B #$36,D3
 		MOVE.W  #ROL_INSTR,(A6)+	* ROL.B D2,D5
 		MOVE.W  #ROL_MS_INSTR,(A6)+	* ROL.W (A5)
@@ -333,7 +333,7 @@ IOLOOP	MOVE.B	(ITE),D4
 		BGT		IOEND
 		MOVE.L	#$0,SP
 		JSR		PROCESS_OC
-		JMP		SD
+		JMP		SD					* Place Break Here
 IOEND	MOVE.B	#9,D0
 		TRAP	#15
 
@@ -356,6 +356,8 @@ SD		MOVE.W	(SP)+,D7
 		MOVE.B	D7,D6
 		LSL.B	#6,D6
 		LSR.B	#6,D6			* D6 = EA count
+		CMP.B	#2,D6
+		BGT		SD_ERR
 		LSR.W	#8,D7
 		JMP		SDOP			* OP Code Decoder
 SDSIZE	LSL.B	#6,D7			* Size Decoder
@@ -387,8 +389,6 @@ SDEAD	CLR		D1				* EA Decoder
 		CLR		D7
 		CMP.B	#0,D6
 		BEQ		SDEND
-		CMP.B	#2,D6
-		BGT		SD_ERR
 		MOVE.L	SP,A1
 		MOVE.B	(A1)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
 		ADD.L	#1,A1
@@ -431,7 +431,6 @@ SDDTED1	JSR 	SDEA
 		BEQ		SDDTW2
 		CMP.B	#5,D5
 		BEQ		SDDTL2
-
 SDDTB2	MOVE.B	(A0),D3			* D3 holds data
 		JMP		SDDTED2
 SDDTW2	MOVE.W	(A0),D3			* D3 holds data
@@ -468,7 +467,8 @@ SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
 
 *-----STRING STACK DECODER-----
 * Prints strings using String Stack
-SSD		MOVE.L	#$00000000,SP
+SSD		MOVE.L	#$0,SP
+		CLR		D5
 		CMPA.L	A6,A5
 		BGT		IOLOOP
 		MOVE.L	#$00000000,D7
@@ -3881,6 +3881,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
