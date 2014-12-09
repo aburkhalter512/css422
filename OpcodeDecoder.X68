@@ -265,6 +265,7 @@ TBL_MASK_SUBA       EQU     %11111111
 TBL_MASK_SUBI       EQU     %01111101
 
 * Iterator
+DPCT	EQU		$FDFFFE
 ITE		EQU		$FDFFFF
 * =============================================================================
 * ================== Begin Program ============================================
@@ -321,12 +322,20 @@ ITE		EQU		$FDFFFF
 		*MOVE.B  #9, D0
 		*TRAP    #15
 *==============================
+*--------Display Module--------
+*==============================
+
+*==============================
 *----------I/O MODULE----------
 *==============================
-		MOVE.B	#$00,ITE
+		MOVE.B	#$0,ITE
+		MOVE.B	#$0,DPCT
 		MOVEA.W	#START_ADDRESS,A2	* Start Addr
 		MOVEA.W	A6,A3				* End Addr
-IOLOOP	MOVE.B	(ITE),D4
+IOLOOP	CMP.B	#$1F,DPCT
+		BEQ		IOEND
+		ADD.B	#1,DPCT
+		MOVE.B	(ITE),D4
 		ADD.L	D4,A2
 		ADD.L	D4,A2
 		CMPA.L	A3,A2
@@ -3881,6 +3890,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
