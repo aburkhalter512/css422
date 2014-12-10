@@ -271,7 +271,7 @@ ITE		EQU		$FDFFFF
 * ================== Begin Program ============================================
 * =============================================================================
 		MOVEA.W #START_ADDRESS, A6
-		
+
 		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
 		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
 		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
@@ -324,8 +324,8 @@ ITE		EQU		$FDFFFF
 *==============================
 *----------I/O MODULE----------
 *==============================
-		MOVE.B	#$0,ITE
-		MOVE.B	#$0,DPCT
+		MOVE.B	#$0,(ITE)
+		MOVE.B	#$0,(DPCT)
 		JSR		DPTITLE
 		MOVEA.W	#START_ADDRESS,A2	* Start Addr
 		MOVEA.W	A6,A3				* End Addr
@@ -351,7 +351,8 @@ IOEND	MOVE.B	#9,D0
 * Stack data starts from $FE0000,
 * and A6 will hold SSP.
 * Data will be stacked down.
-SD		MOVEA.L	#SSTACK,A6
+SD		MOVEA.L	#SSTACK,A6		* Presets
+		MOVE.B	#1,(ITE)
 		MOVE.B	#$FD,(A6)+		* Front Matter
 		MOVE.L	A2,D7
 		ROL.L	#8,D7
@@ -3881,6 +3882,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
