@@ -333,7 +333,7 @@ ITE		EQU		$FDFFFF
 		MOVE.W	#$FF00,D1
 		MOVE.B	#11,D0
 		TRAP	#15
-IOLOOP	CMP.B	#$1F,DPCT
+IOLOOP	CMP.B	#$1D,DPCT
 		BEQ		DPLOOP
 		ADD.B	#1,DPCT
 		MOVE.B	(ITE),D4
@@ -819,10 +819,7 @@ SD_DAT	MOVE.B	#$33,(A6)+
 *==============================
 *--------Display Module--------
 *==============================
-ERRIN	LEA		S30,A1
-		MOVE.B	#14,D0
-		TRAP	#15
-		LEA		SINVAL,A1
+ERRIN	LEA		SINVAL,A1
 		MOVE.B	#14,D0
 		TRAP	#15
 		MOVE.B	#0,D1
@@ -875,7 +872,7 @@ ENDIN	MOVE.L	#$0,A1
 		CMP.B	#8,D1
 		BNE		ERRIN
 		JSR		INHEX
-		CMP.L	(A2),D6
+		CMP.L	A2,D6
 		BLT		ERRIN
 		CMP.L	#$00FCFFFF,D6
 		BGT		ERRIN
@@ -4110,10 +4107,10 @@ TITLE	DC.B	'                  ::                 :%@@%:                 .:      
 		DC.B	'    =##     .:.   *@* ...+%@@@@@@@*+*%####%*+*@@@@@@@@+... +@*   .:.     ##=    ',CR,LF
 		DC.B	'     =*           .+##*     :*#%%#%%*%%@@%@*%%#%%#*:     *##+.           *=     ',CR,LF
 		DC.B	'                                      .@@.                                      ',CR,LF
-		DC.B	'                                       **                                       ',CR,LF,0
+		DC.B	'  68K Disassembler  presented by Adam Burkhalter, Jongwook Kim, & Terry Rogers  ',CR,LF,0
 SSTADDR	DC.B	'Starting Address      ($00004000 ~ $00FCFFFE) >> ',0
 SEDADDR	DC.B	'Ending Address (Starting Address ~ $00FCFFFE) >> ',0
-SINVAL	DC.B	'Invalid Input',CR,LF,0
+SINVAL	DC.B	'Invalid Input',0
 ;=================== Test Data ================================================
 TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
 TEST_MOVE_1         DC.W    %0011001010001110           ;MOVE.W A6, (A1)
@@ -4127,6 +4124,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
