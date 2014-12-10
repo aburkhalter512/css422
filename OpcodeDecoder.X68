@@ -272,10 +272,50 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 		MOVEA.L #START_ADDRESS, A6
 
+		MOVE.W	#$1619,(A6)+
+		MOVE.W	#$1621,(A6)+
+*		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
+*		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
+*		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
+*		MOVE.W	#ASL_INSTR,(A6)+	* ASL.B D4,D2
+*		MOVE.W	#ASL_MS_INSTR,(A6)+	* ASL.W (A5)
+*		MOVE.W	#ASR_INSTR,(A6)+	* ASR.W D6,D0
+*		MOVE.W	#ASR_MS_INSTR,(A6)+	* ASR.W (A5)
+*		MOVE.L	#BEQ_INSTR,(A6)+
+*		MOVE.L	#BRA_INSTR,(A6)+
+*		MOVE.L	#CMPI_INSTR,(A6)+	* CMPI.W #$0005,D7
+*		MOVE.W	#DIVS_INSTR,(A6)+	* DIVS.W D0,D4
+*		MOVE.L	#EOR_INSTR,(A6)+	* EOR.W D2,$6000
+*		MOVE.L	#EORI_INSTR,(A6)+	* EORI.W #$0007,D1
+*		MOVE.W	#JSR_INSTR_OC,(A6)+	* JSR $0000101A
+*		MOVE.L	#JSR_INSTR_DATA,(A6)+
+*		MOVE.L  #LEA_INSTR,(A6)+	* LEA $5000,A5
+*		MOVE.W  #LSL_ID_INSTR,(A6)+ * LSL.L #$00000008, D7
+*		MOVE.W	#LSL_INSTR,(A6)+	* LSL.W D5,D1
+*		MOVE.W  #LSL_MS_INSTR,(A6)+ * LSL.W (A5)
+*		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
+*		MOVE.L  #MOVEA_INSTR,(A6)+	* MOVEA.W #$4000,A2
+*		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
+*		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $00008000
+*		MOVE.L	#NEG_INSTR_DATA,(A6)+
+*		MOVE.W  #NOT_INSTR, (A6)+	* NOT.L D5
+*		MOVE.L  #ORI_INSTR,(A6)+	* ORI.B #$0036,D3
+*		MOVE.W  #ROL_INSTR,(A6)+	* ROL.B D2,D5
+*		MOVE.W  #ROL_MS_INSTR,(A6)+	* ROL.W (A5)
+*		MOVE.W  #ROR_ID_INSTR,(A6)+	* ROR.W #0004,D1
+*		MOVE.W  #ROR_INSTR,(A6)+	* ROR.L D7,D0
+*		MOVE.W  #ROR_MS_INSTR,(A6)+	* ROR.W (A5)
+*		MOVE.W  #RTS_INSTR,(A6)+
+*		MOVE.L  #SUBA_INSTR,(A6)+	* SUBA.W $A000,A4
+*		MOVE.W  #SUBI_INSTR,(A6)+	* SUBI.L #$00000309,$09381764
+*		MOVE.L  #SUBI_INSTR_2,(A6)+
+*		MOVE.L  #SUBI_INSTR_3,(A6)+	
+*		MOVE.W  #INVALID_INSTR,(A6)
+
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
-        *MOVEA.W #START_ADDRESS, A2
-        *MOVEA.W A2, A3
+        *MOVEA.L #START_ADDRESS, A2
+        *MOVEA.L A2, A3
                                         
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
@@ -714,9 +754,9 @@ SDEA	CMP.B	#$80,D7			* Validity Check
 		CMP.B	#$30,D7			* Parenthesis
 		BLT		SD_PAR
 		CMP.B	#$50,D7			* Pre Decrement
-		BLT		SD_PRD
-		CMP.B	#$70,D7			* Post Increment
 		BLT		SD_POI
+		CMP.B	#$70,D7			* Post Increment
+		BLT		SD_PRD
 SDEATP	CMP.B	#1,D5
 		BNE		SDDATA
 SDREG	LSL.B	#4,D7
@@ -1203,9 +1243,6 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 *------------------------------------------------------------------------------
 PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Condition Code
                     MOVE.W  (A2), D4
@@ -1326,7 +1363,7 @@ PREPROCESS_Bcc_BYTE * Size
                     ADD.B   D3, D2
                     
                     * Word Count
-                    MOVE.B  #2, D7
+                    MOVE.B  #0, D7
                     
                     RTS
                     
@@ -1343,7 +1380,7 @@ PREPROCESS_Bcc_WORD * Size
                     ADD.W   D3, D2
                     
                     * Word Count
-                    MOVE.B  #0, D7
+                    MOVE.B  #2, D7
                     
                     RTS
 
@@ -3849,6 +3886,8 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
+
 
 
 
