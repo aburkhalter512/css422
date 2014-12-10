@@ -314,8 +314,8 @@ ITE		EQU		$FDFFFF
 
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
-        *MOVEA.W #START_ADDRESS, A2
-        *MOVEA.W A2, A3
+        *MOVEA.L #START_ADDRESS, A2
+        *MOVEA.L A2, A3
                                         
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
@@ -1243,9 +1243,6 @@ OC_TWO_EA           MOVE.B  D0, -(SP)   ; Put the Opcode size on the stack.
 *------------------------------------------------------------------------------
 PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Condition Code
                     MOVE.W  (A2), D4
@@ -1366,7 +1363,7 @@ PREPROCESS_Bcc_BYTE * Size
                     ADD.B   D3, D2
                     
                     * Word Count
-                    MOVE.B  #2, D7
+                    MOVE.B  #0, D7
                     
                     RTS
                     
@@ -1383,7 +1380,7 @@ PREPROCESS_Bcc_WORD * Size
                     ADD.W   D3, D2
                     
                     * Word Count
-                    MOVE.B  #0, D7
+                    MOVE.B  #2, D7
                     
                     RTS
 
