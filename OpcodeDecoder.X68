@@ -341,6 +341,7 @@ IOLOOP	CMP.B	#$17,DPCT
 		CMPA.L	A3,A2
 		BGT		IOEND
 		MOVE.L	#$0,SP
+		CLR		D5
 		JSR		PROCESS_OC
 		JMP		SD					* Place Break Here
 IOEND	MOVE.B	#9,D0
@@ -350,8 +351,19 @@ IOEND	MOVE.B	#9,D0
 * Stack data starts from $FE0000,
 * and A6 will hold SSP.
 * Data will be stacked down.
-SD		MOVE.W	(SP)+,D7
-		MOVEA.L	#SSTACK,A6
+SD		MOVEA.L	#SSTACK,A6
+		MOVE.B	#$FD,(A6)+		* Front Matter
+		MOVE.L	A2,D7
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		MOVE.B	#$09,(A6)+
+		MOVE.W	(SP)+,D7
 		CMP.W	#$0000,D7		* Validity Check/Iteration Setting
 		BLT		SD_ERR
 		ROL.W	#5,D7
@@ -379,24 +391,14 @@ SDSIZE	LSL.B	#6,D7			* Size Decoder
 		CMP.B	#$C0,D7
 		BEQ		SD_LWRD
 		JMP		SD_ERR
-SD_NSZ	MOVE.B	#$09,(A6)+
-		JMP		SDEAD
+SD_NSZ	JMP		SDEAD
 SD_BYTE	MOVE.B	#$00,(A6)+
-		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
 SD_WORD	MOVE.B	#$01,(A6)+
-		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
 SD_LWRD	MOVE.B	#$02,(A6)+
-		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
-SDEAD	CLR		D1				* EA Decoder
-		CLR		D2
-		CLR		D3
-		CLR		D4
-		CLR		D5
-		CLR		D7
-		CMP.B	#0,D6
+SDEAD	CMP.B	#0,D6			* EA Decoder
 		BEQ		SDEND
 		MOVE.L	SP,A1
 		MOVE.B	(A1)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
@@ -452,18 +454,7 @@ SDDTED2	JSR 	SDEA
 SDEND	MOVE.B	#$30,(A6)		* Line Feeding
 		MOVEA.L	#SSTACK,A5
 		JMP		SSD
-SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
-		MOVE.L	A2,D7
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		MOVE.B	#$09,(A6)+
-		MOVE.B	#$31,(A6)+
+SD_ERR	MOVE.B	#$31,(A6)+		* Error Handler
 		MOVE.B	#$09,(A6)+
 		MOVE.B	#$32,(A6)+
 		MOVE.B	#$FE,(A6)+
@@ -477,7 +468,6 @@ SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
 *-----STRING STACK DECODER-----
 * Prints strings using String Stack
 SSD		MOVE.L	#$0,SP
-
 		CMPA.L	A6,A5
 		BGT		IOLOOP
 		MOVE.L	#$00000000,D7
@@ -847,6 +837,17 @@ DPLOOP	MOVE.B	#$0,DPCT
 		MOVE.B	#11,D0
 		TRAP	#15
 		JMP		IOLOOP
+		
+CLR_DATA_REGISTERS  CLR.L   D0
+                    CLR.L   D1
+                    CLR.L   D2
+                    CLR.L   D3
+                    CLR.L   D4
+                    CLR.L   D5
+                    CLR.L   D6
+                    CLR.L   D7
+                    
+                    RTS
 
 OC_ERROR            MOVE.L  #$00FFFFFC, A7 ; Move the SP to the RTS value, effectively cleaning the stack.
                     MOVE.L  (SP)+, A6
@@ -1453,7 +1454,8 @@ PREPROCESS_Bcc_WORD * Size
 *           The most significant bit will be 1 indicating an error. No other information
 *           will be on the stack (clean).
 * =============================================================================
-PROCESS_OC          JSR     CHECK_ADD_OC
+PROCESS_OC          JSR     CLR_DATA_REGISTERS
+                    JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
                     JSR     CHECK_MULS_OC
@@ -1487,9 +1489,6 @@ CHECK_ADD_OC        MOVE.W  (A2), D0
 
 PROCESS_ADD_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Opmode
                     MOVE.W  (A2), D0
@@ -1660,9 +1659,6 @@ CHECK_AND_OC        MOVE.W  (A2), D0
 
 PROCESS_AND_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Opmode
                     MOVE.W  (A2), D0
@@ -1777,9 +1773,6 @@ CHECK_CMP_EOR_OC    MOVE.W  (A2), D0
 
 PROCESS_CMP_EOR_OC  MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Opmode
                     MOVE.W  (A2), D0
@@ -1933,9 +1926,6 @@ CHECK_CMPI_OC       MOVE.W  (A2), D0
 
 PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -1990,9 +1980,6 @@ CHECK_DIVS_OC       MOVE.W  (A2), D0
 
 PROCESS_DIVS_OC     MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.B  #OC_WORD_SIZE, D0
@@ -2044,9 +2031,6 @@ CHECK_EORI_OC       MOVE.W  (A2), D0
 
 PROCESS_EORI_OC     MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -2102,9 +2086,6 @@ CHECK_JSR_OC        MOVE.W  (A2), D0
 
 PROCESS_JSR_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.B  #OC_LONG_SIZE, D0
@@ -2150,9 +2131,6 @@ CHECK_LEA_OC        MOVE.W  (A2), D0
 
 PROCESS_LEA_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.B  #OC_LONG_SIZE, D0
@@ -2206,9 +2184,6 @@ CHECK_MOVE_OC       MOVE.W  (A2), D0                ; Create a copy of the curre
 
 PROCESS_MOVE_OC     MOVE.L  (SP)+, D0               ; Pop the RTS address from the stack.
                     CLR     D0                      ; Clear D0 for processing.
-                    CLR     D1                      ; Clear D1 for processing.
-                    CLR     D2                      ; Clear D2 for processing.
-                    CLR     D3                      ; Clear D3 for processing.
                     
                     * Size
                     MOVE.W  (A2), D0                ; Create a copy of the current instruction.
@@ -2294,9 +2269,6 @@ CHECK_MOVEA_OC      MOVE.W  (A2), D0                ; Create a copy of the curre
 
 PROCESS_MOVEA_OC    MOVE.L  (SP)+, D0               ; Pop the RTS address from the stack.
                     CLR     D0                      ; Clear D0 for processing.
-                    CLR     D1                      ; Clear D1 for processing.
-                    CLR     D2                      ; Clear D2 for processing.
-                    CLR     D3                      ; Clear D3 for processing.
                     
                     * Size
                     MOVE.W  (A2), D0                ; Create a copy of the current instruction.
@@ -2358,9 +2330,6 @@ CHECK_MULS_OC       MOVE.W  (A2), D0
 
 PROCESS_MULS_OC     MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.B  #OC_WORD_SIZE, D0
@@ -2412,9 +2381,6 @@ CHECK_NEG_OC        MOVE.W  (A2), D0
 
 PROCESS_NEG_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -2466,9 +2432,6 @@ CHECK_NOT_OC        MOVE.W  (A2), D0
 
 PROCESS_NOT_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -2520,9 +2483,6 @@ CHECK_ORI_OC        MOVE.W  (A2), D0
 
 PROCESS_ORI_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -2578,9 +2538,6 @@ CHECK_RTS_OC        MOVE.W  (A2), D0
 
 PROCESS_RTS_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     MOVE.B  #RTS_OC_CODE, D5
                     
@@ -2597,9 +2554,6 @@ CHECK_MEM_SHIFT_OC  MOVE.W  (A2), D0
 
 PREPROCESS_MS_OC    MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.B  #OC_WORD_SIZE, D0
@@ -2701,9 +2655,6 @@ CHECK_REG_SHIFT_OC  MOVE.W  (A2), D0
 
 PREPROCESS_RS_OC    MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -2999,9 +2950,6 @@ CHECK_SUB_OC        MOVE.W  (A2), D0
 
 PROCESS_SUB_OC      MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Opmode
                     MOVE.W  (A2), D0
@@ -3153,9 +3101,6 @@ CHECK_SUBI_OC       MOVE.W  (A2), D0
 
 PROCESS_SUBI_OC     MOVE.L  (SP)+, D0
                     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
                     
                     * Size
                     MOVE.W  (A2), D0
@@ -3936,6 +3881,8 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
+
 
 
 
