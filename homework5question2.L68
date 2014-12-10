@@ -1,6 +1,6 @@
-00004000 Starting Address
+00008000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.15.02
-Created On: 12/4/2014 11:14:06 AM
+Created On: 12/9/2014 9:21:09 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : hw5question2.X68
@@ -10,153 +10,153 @@ Created On: 12/4/2014 11:14:06 AM
 00000000  =0000000D                  6  CR      EQU     $0D
 00000000  =0000000A                  7  LF      EQU     $0A
 00000000                             8  
-00004000                             9      ORG    $4000
-00004000                            10  START:
-00004000                            11  
-00004000  11FC 000F 7A50            12                  MOVE.B #$0F, $7A50          ;Load the pattern into the pattern location for testing
-00004006  11FC 000F A100            13                  MOVE.B #$0F, $FFFFA100      ;Load the memory with the desired pattern
-0000400C                            14  
-0000400C                            15                  * D0 contains the count variable
-0000400C                            16                  * D1 contains the data stored at PATTERN
-0000400C                            17                  * D2 contains the word size sum of the bytes at address Addr1
-0000400C                            18                  * D3 will contain the byte value at the moving pointer
-0000400C                            19                  * A0 contains the end address
-0000400C                            20                  * A1 contains the current address (aka pointer)
-0000400C  4240                      21                  CLR.W D0                ;D0 = 0
-0000400E  1238 7A50                 22                  MOVE.B $7A50, D1        ;Load D1 with the pattern
-00004012  4242                      23                  CLR.W D2                ;D2 = 0
-00004014  4243                      24                  CLR.W D3                ;Clear out the register
-00004016                            25                  
-00004016  3079 00004104             26                  MOVEA.W END_ADDR, A0    ;Load the end processing address
-0000401C  3279 00004102             27                  MOVEA.W START_ADDR, A1  ;Load the current line
-00004022                            28                  
-00004022  23FC 000A0000 0000416C    29                  MOVE.L #$A0000, Addr1   ;Load Addr1 with a default value
-0000402C                            30      
-0000402C                            31                  * Iterate the loop
-0000402C                            32                  * for (int i = START_ADDR; i < END_ADDR; i++)
-0000402C  B3C8                      33  FIRST_LOOP      CMP.L A0, A1            ;Compare the current count to the count limit
-0000402E  6E00 000E                 34                  BGT SECOND_LOOP         ;If the count limit has been reached, break the loop
-00004032                            35                  
-00004032  B219                      36                  CMP.B (A1)+, D1         ;Compare the current line with the pattern and increment
-00004034  66F6                      37                  BNE FIRST_LOOP          ;Loop back immediately
-00004036                            38                  
-00004036  5349                      39                  SUBA.W #1, A1           ;Remove the iteration, and pop it back on the next instruction
-00004038  23C9 0000416C             40                  MOVE.L A1, Addr1        ;Store the line that matches the pattern
-0000403E                            41                  
-0000403E                            42                  * We found our data so no need to continue the loop
-0000403E                            43                  
-0000403E                            44                  * Iterate the loop
-0000403E                            45                  * for (int i = 0; i < PROCESS_LEN; i++)
-0000403E  B07C 4108                 46  SECOND_LOOP     CMP.W #PROCESS_LEN, D0  ;Compare D0 against 512
-00004042  6E00 0014                 47                  BGT EXIT_SECOND_LOOP    ;If the count has been reached, break
-00004046  5240                      48                  ADDQ #1, D0             ;i++
-00004048                            49                  
-00004048  1619                      50                  MOVE.B (A1)+, D3        ;Move the byte to be added to the data reg
-0000404A                            51                                          ;We want the data register to extend the byte to a word (without sign)
-0000404A                            52                  
-0000404A  D443                      53                  ADD.W D3, D2            ;Add the byte to the current sum
-0000404C  64F0                      54                  BCC SECOND_LOOP         ;No carry, so continue the loop
-0000404E                            55                  
-0000404E  13FC 0001 00004172        56                  MOVE.B #1, Carry        ;Store the carry bit for later
-00004056                            57                  
-00004056  60E6                      58                  BRA SECOND_LOOP         ;Continue processing the bytes
-00004058                            59                  
-00004058  33C2 00004170             60  EXIT_SECOND_LOOP MOVE.W D2, Addsum      ;Move the final summed value into memory
-0000405E                            61  
-0000405E                            62                  * Begin I/O Processing
-0000405E                            63                  
-0000405E                            64                  * Display Pattern address
-0000405E  43F9 0000410A             65                  LEA FOUND_PAT_STR, A1   ;Load the string to display
-00004064  103C 000E                 66                  MOVE.B #14, D0          ;14 is display c-string
-00004068  4E4F                      67                  TRAP #15                 ;display the c-string
-0000406A                            68                  
-0000406A  2F39 0000416C             69                  MOVE.L Addr1, -(SP)
-00004070  4EB9 000040C6             70                  JSR LONG_TO_STR
-00004076                            71                  
-00004076                            72                  
-00004076  225F                      73                  MOVEA.L (SP)+, A1        ;Load the address in decimal form
-00004078  103C 000E                 74                  MOVE.B #14, D0           ;3 is display signed number
-0000407C  4E4F                      75                  TRAP #15                 ;display the signed-number
-0000407E                            76                  
-0000407E  43F9 00004157             77                  LEA NEW_LINE, A1        ;Load the new line
-00004084  103C 000E                 78                  MOVE.B #14, D0          ;14 is display c-string
-00004088  4E4F                      79                  TRAP #15
-0000408A                            80                  
-0000408A                            81                  * Display the sum
-0000408A  43F9 00004127             82                  LEA SUMMED_STR, A1      ;Load the string to display
-00004090  4E4F                      83                  TRAP #15                ;Display the c-string
-00004092                            84                  
-00004092  4281                      85                  CLR.L D1                ;D1 = 0;
-00004094  3239 00004170             86                  MOVE.W Addsum, D1       ;Load the number to display
-0000409A  103C 0003                 87                  MOVE.B #3, D0           ;3 is display signed number
-0000409E  4E4F                      88                  TRAP #15
-000040A0                            89                  
-000040A0  43F9 00004157             90                  LEA NEW_LINE, A1        ;Load the new line
-000040A6  103C 000E                 91                  MOVE.B #14, D0          ;14 is display c-string without CRLF
-000040AA  4E4F                      92                  TRAP #15                ;Display the new line
-000040AC                            93                  
-000040AC                            94                  * Display the carry
-000040AC  43F9 0000414B             95                  LEA CARRY_STR, A1       ;Load the string to display
-000040B2  4E4F                      96                  TRAP #15                ;Display the c-string
-000040B4                            97                  
-000040B4  4241                      98                  CLR.W D1                ;D1 = 0
-000040B6  1239 00004172             99                  MOVE.B Carry, D1        ;Load the number to display
-000040BC  103C 0003                100                  MOVE.B #3, D0           ;3 is display signed number
-000040C0  4E4F                     101                  TRAP #15                ;Display the signed number
-000040C2                           102                  
-000040C2  FFFF FFFF                103                  SIMHALT                 ;halt simulator
-000040C6                           104                
-000040C6                           105  ; + hexString: long* LONG_TO_STR(data: long)
-000040C6  2C5F                     106  LONG_TO_STR     MOVE.L (SP)+, A6        ;Grab the rts value
-000040C8  201F                     107                  MOVE.L (SP)+, D0        ;Grab the data argument
-000040CA                           108                  
-000040CA  207C 00004173            109                  MOVEA.L #HEX_STRING, A0 ;Get the return value
-000040D0  D0FC 0009                110                  ADDA.W #9, A0           ;Find the last position of the return value
-000040D4  113C 0000                111                  MOVE.B #0, -(A0)        ;Put null as the last character
-000040D8                           112                  
-000040D8  123C 0008                113                  MOVE.B #8, D1           ;Load D1 with 8
-000040DC                           114                  
-000040DC  4282                     115                  CLR.L D2                ;D2 = 0
-000040DE                           116                  
-000040DE                           117                  ; for (int i = 8; i > 0; i--)
-000040DE                           118                  ; for each hex value
-000040DE  0C01 0000                119  __LONG_LOOP     CMPI.B #0, D1           ;0 < D4
-000040E2  6F00 0018                120                  BLE __LONG_EXIT         ;if D4 <= 0, break
-000040E6  5341                     121                  SUBQ #1, D1
-000040E8                           122                  
-000040E8  1400                     123                  MOVE.B D0, D2           ;Copy the lowest byte over for processing
-000040EA  0202 000F                124                  ANDI.B #$0F, D2          ;Mask out the lowest 4 bits
-000040EE                           125                                  
-000040EE  227C 0000415A            126                  MOVEA.L #HEX_VALUES, A1 ;Move the hex values in for processing
-000040F4  D3C2                     127                  ADDA.L D2, A1           ;Find the appropriate hex value for the given number (0-32 only evens)
-000040F6                           128                  
-000040F6  1111                     129                  MOVE.B (A1), -(A0)      ;Put the hex string into the return value
-000040F8                           130                  
-000040F8  E888                     131                  LSR.L #4, D0            ;Shift the register to process the next hex value
-000040FA                           132                  
-000040FA  60E2                     133                  BRA __LONG_LOOP         ;Loop back
-000040FC                           134                  
-000040FC  2F08                     135  __LONG_EXIT     MOVE.L A0, -(SP)        ;Load the return value
-000040FE  2F0E                     136                  MOVE.L A6, -(SP)        ;Put the rts value back
-00004100  4E75                     137                  RTS                     ;Return to whoever called ud
-00004102                           138  
-00004102= A000                     139  START_ADDR      DC.W        $A000       ;The starting address (inclusive)
-00004104= B000                     140  END_ADDR        DC.W        $B000       ;The ending address (exclusive)
-00004106= 7A50                     141  PATTERN         DC.W        $7A50       ;The pattern to check
-00004108= 0200                     142  PROCESS_LEN     DC.W        512         ;The number of bytes to process
-0000410A                           143  
-0000410A= 50 61 74 74 65 72 ...    144  FOUND_PAT_STR   DC.B        'Pattern matched at address: ', 0
-00004127= 56 61 6C 75 65 20 ...    145  SUMMED_STR      DC.B        'Value at address + next 511 bytes: ', 0
-0000414B= 43 61 72 72 79 20 ...    146  CARRY_STR       DC.B        'Carry bit: ', 0
-00004157= 0D 0A 00                 147  NEW_LINE        DC.B        CR, LF, 0
-0000415A= 30 31 32 33 34 35 ...    148  HEX_VALUES      DC.B        '0123456789ABCDEF', 0
-0000416B                           149  
-0000416C                           150  Addr1           DS.L        1           ;The variable to store the address to process
-00004170                           151  Addsum          DS.W        1           ;The sum of the 512 consecutive bytes
-00004172                           152  Carry           DS.B        1           ;The carry bit for Addsum
-00004173                           153  HEX_STRING      DS.B        9           ;The storage for the string version of a long value + 1 for NULL character
-0000417C                           154  
-0000417C                           155      END    START        ; last line of source
+00008000                             9      ORG    $8000
+00008000                            10  START:
+00008000                            11  
+00008000  11FC 000F 7A50            12                  MOVE.B #$0F, $7A50          ;Load the pattern into the pattern location for testing
+00008006  11FC 000F A100            13                  MOVE.B #$0F, $FFFFA100      ;Load the memory with the desired pattern
+0000800C                            14  
+0000800C                            15                  * D0 contains the count variable
+0000800C                            16                  * D1 contains the data stored at PATTERN
+0000800C                            17                  * D2 contains the word size sum of the bytes at address Addr1
+0000800C                            18                  * D3 will contain the byte value at the moving pointer
+0000800C                            19                  * A0 contains the end address
+0000800C                            20                  * A1 contains the current address (aka pointer)
+0000800C  4240                      21                  CLR.W D0                ;D0 = 0
+0000800E  1238 7A50                 22                  MOVE.B $7A50, D1        ;Load D1 with the pattern
+00008012  4242                      23                  CLR.W D2                ;D2 = 0
+00008014  4243                      24                  CLR.W D3                ;Clear out the register
+00008016                            25                  
+00008016  3079 00008104             26                  MOVEA.W END_ADDR, A0    ;Load the end processing address
+0000801C  3279 00008102             27                  MOVEA.W START_ADDR, A1  ;Load the current line
+00008022                            28                  
+00008022  23FC 000A0000 0000816C    29                  MOVE.L #$A0000, Addr1   ;Load Addr1 with a default value
+0000802C                            30      
+0000802C                            31                  * Iterate the loop
+0000802C                            32                  * for (int i = START_ADDR; i < END_ADDR; i++)
+0000802C  B3C8                      33  FIRST_LOOP      CMP.L A0, A1            ;Compare the current count to the count limit
+0000802E  6E00 000E                 34                  BGT SECOND_LOOP         ;If the count limit has been reached, break the loop
+00008032                            35                  
+00008032  B219                      36                  CMP.B (A1)+, D1         ;Compare the current line with the pattern and increment
+00008034  66F6                      37                  BNE FIRST_LOOP          ;Loop back immediately
+00008036                            38                  
+00008036  5349                      39                  SUBA.W #1, A1           ;Remove the iteration, and pop it back on the next instruction
+00008038  23C9 0000816C             40                  MOVE.L A1, Addr1        ;Store the line that matches the pattern
+0000803E                            41                  
+0000803E                            42                  * We found our data so no need to continue the loop
+0000803E                            43                  
+0000803E                            44                  * Iterate the loop
+0000803E                            45                  * for (int i = 0; i < PROCESS_LEN; i++)
+0000803E  B07C 8108                 46  SECOND_LOOP     CMP.W #PROCESS_LEN, D0  ;Compare D0 against 512
+00008042  6E00 0014                 47                  BGT EXIT_SECOND_LOOP    ;If the count has been reached, break
+00008046  5240                      48                  ADDQ #1, D0             ;i++
+00008048                            49                  
+00008048  1619                      50                  MOVE.B (A1)+, D3        ;Move the byte to be added to the data reg
+0000804A                            51                                          ;We want the data register to extend the byte to a word (without sign)
+0000804A                            52                  
+0000804A  D443                      53                  ADD.W D3, D2            ;Add the byte to the current sum
+0000804C  64F0                      54                  BCC SECOND_LOOP         ;No carry, so continue the loop
+0000804E                            55                  
+0000804E  13FC 0001 00008172        56                  MOVE.B #1, Carry        ;Store the carry bit for later
+00008056                            57                  
+00008056  60E6                      58                  BRA SECOND_LOOP         ;Continue processing the bytes
+00008058                            59                  
+00008058  33C2 00008170             60  EXIT_SECOND_LOOP MOVE.W D2, Addsum      ;Move the final summed value into memory
+0000805E                            61  
+0000805E                            62                  * Begin I/O Processing
+0000805E                            63                  
+0000805E                            64                  * Display Pattern address
+0000805E  43F9 0000810A             65                  LEA FOUND_PAT_STR, A1   ;Load the string to display
+00008064  103C 000E                 66                  MOVE.B #14, D0          ;14 is display c-string
+00008068  4E4F                      67                  TRAP #15                 ;display the c-string
+0000806A                            68                  
+0000806A  2F39 0000816C             69                  MOVE.L Addr1, -(SP)
+00008070  4EB9 000080C6             70                  JSR LONG_TO_STR
+00008076                            71                  
+00008076                            72                  
+00008076  225F                      73                  MOVEA.L (SP)+, A1        ;Load the address in decimal form
+00008078  103C 000E                 74                  MOVE.B #14, D0           ;3 is display signed number
+0000807C  4E4F                      75                  TRAP #15                 ;display the signed-number
+0000807E                            76                  
+0000807E  43F9 00008157             77                  LEA NEW_LINE, A1        ;Load the new line
+00008084  103C 000E                 78                  MOVE.B #14, D0          ;14 is display c-string
+00008088  4E4F                      79                  TRAP #15
+0000808A                            80                  
+0000808A                            81                  * Display the sum
+0000808A  43F9 00008127             82                  LEA SUMMED_STR, A1      ;Load the string to display
+00008090  4E4F                      83                  TRAP #15                ;Display the c-string
+00008092                            84                  
+00008092  4281                      85                  CLR.L D1                ;D1 = 0;
+00008094  3239 00008170             86                  MOVE.W Addsum, D1       ;Load the number to display
+0000809A  103C 0003                 87                  MOVE.B #3, D0           ;3 is display signed number
+0000809E  4E4F                      88                  TRAP #15
+000080A0                            89                  
+000080A0  43F9 00008157             90                  LEA NEW_LINE, A1        ;Load the new line
+000080A6  103C 000E                 91                  MOVE.B #14, D0          ;14 is display c-string without CRLF
+000080AA  4E4F                      92                  TRAP #15                ;Display the new line
+000080AC                            93                  
+000080AC                            94                  * Display the carry
+000080AC  43F9 0000814B             95                  LEA CARRY_STR, A1       ;Load the string to display
+000080B2  4E4F                      96                  TRAP #15                ;Display the c-string
+000080B4                            97                  
+000080B4  4241                      98                  CLR.W D1                ;D1 = 0
+000080B6  1239 00008172             99                  MOVE.B Carry, D1        ;Load the number to display
+000080BC  103C 0003                100                  MOVE.B #3, D0           ;3 is display signed number
+000080C0  4E4F                     101                  TRAP #15                ;Display the signed number
+000080C2                           102                  
+000080C2  FFFF FFFF                103                  SIMHALT                 ;halt simulator
+000080C6                           104                
+000080C6                           105  ; + hexString: long* LONG_TO_STR(data: long)
+000080C6  2C5F                     106  LONG_TO_STR     MOVE.L (SP)+, A6        ;Grab the rts value
+000080C8  201F                     107                  MOVE.L (SP)+, D0        ;Grab the data argument
+000080CA                           108                  
+000080CA  207C 00008173            109                  MOVEA.L #HEX_STRING, A0 ;Get the return value
+000080D0  D0FC 0009                110                  ADDA.W #9, A0           ;Find the last position of the return value
+000080D4  113C 0000                111                  MOVE.B #0, -(A0)        ;Put null as the last character
+000080D8                           112                  
+000080D8  123C 0008                113                  MOVE.B #8, D1           ;Load D1 with 8
+000080DC                           114                  
+000080DC  4282                     115                  CLR.L D2                ;D2 = 0
+000080DE                           116                  
+000080DE                           117                  ; for (int i = 8; i > 0; i--)
+000080DE                           118                  ; for each hex value
+000080DE  0C01 0000                119  __LONG_LOOP     CMPI.B #0, D1           ;0 < D4
+000080E2  6F00 0018                120                  BLE __LONG_EXIT         ;if D4 <= 0, break
+000080E6  5341                     121                  SUBQ #1, D1
+000080E8                           122                  
+000080E8  1400                     123                  MOVE.B D0, D2           ;Copy the lowest byte over for processing
+000080EA  0202 000F                124                  ANDI.B #$0F, D2          ;Mask out the lowest 4 bits
+000080EE                           125                                  
+000080EE  227C 0000815A            126                  MOVEA.L #HEX_VALUES, A1 ;Move the hex values in for processing
+000080F4  D3C2                     127                  ADDA.L D2, A1           ;Find the appropriate hex value for the given number (0-32 only evens)
+000080F6                           128                  
+000080F6  1111                     129                  MOVE.B (A1), -(A0)      ;Put the hex string into the return value
+000080F8                           130                  
+000080F8  E888                     131                  LSR.L #4, D0            ;Shift the register to process the next hex value
+000080FA                           132                  
+000080FA  60E2                     133                  BRA __LONG_LOOP         ;Loop back
+000080FC                           134                  
+000080FC  2F08                     135  __LONG_EXIT     MOVE.L A0, -(SP)        ;Load the return value
+000080FE  2F0E                     136                  MOVE.L A6, -(SP)        ;Put the rts value back
+00008100  4E75                     137                  RTS                     ;Return to whoever called ud
+00008102                           138  
+00008102= A000                     139  START_ADDR      DC.W        $A000       ;The starting address (inclusive)
+00008104= B000                     140  END_ADDR        DC.W        $B000       ;The ending address (exclusive)
+00008106= 7A50                     141  PATTERN         DC.W        $7A50       ;The pattern to check
+00008108= 0200                     142  PROCESS_LEN     DC.W        512         ;The number of bytes to process
+0000810A                           143  
+0000810A= 50 61 74 74 65 72 ...    144  FOUND_PAT_STR   DC.B        'Pattern matched at address: ', 0
+00008127= 56 61 6C 75 65 20 ...    145  SUMMED_STR      DC.B        'Value at address + next 511 bytes: ', 0
+0000814B= 43 61 72 72 79 20 ...    146  CARRY_STR       DC.B        'Carry bit: ', 0
+00008157= 0D 0A 00                 147  NEW_LINE        DC.B        CR, LF, 0
+0000815A= 30 31 32 33 34 35 ...    148  HEX_VALUES      DC.B        '0123456789ABCDEF', 0
+0000816B                           149  
+0000816C                           150  Addr1           DS.L        1           ;The variable to store the address to process
+00008170                           151  Addsum          DS.W        1           ;The sum of the 512 consecutive bytes
+00008172                           152  Carry           DS.B        1           ;The carry bit for Addsum
+00008173                           153  HEX_STRING      DS.B        9           ;The storage for the string version of a long value + 1 for NULL character
+0000817C                           154  
+0000817C                           155      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -165,25 +165,25 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ADDR1               416C
-ADDSUM              4170
-CARRY               4172
-CARRY_STR           414B
+ADDR1               816C
+ADDSUM              8170
+CARRY               8172
+CARRY_STR           814B
 CR                  D
-END_ADDR            4104
-EXIT_SECOND_LOOP    4058
-FIRST_LOOP          402C
-FOUND_PAT_STR       410A
-HEX_STRING          4173
-HEX_VALUES          415A
+END_ADDR            8104
+EXIT_SECOND_LOOP    8058
+FIRST_LOOP          802C
+FOUND_PAT_STR       810A
+HEX_STRING          8173
+HEX_VALUES          815A
 LF                  A
-LONG_TO_STR         40C6
-NEW_LINE            4157
-PATTERN             4106
-PROCESS_LEN         4108
-SECOND_LOOP         403E
-START               4000
-START_ADDR          4102
-SUMMED_STR          4127
-__LONG_EXIT         40FC
-__LONG_LOOP         40DE
+LONG_TO_STR         80C6
+NEW_LINE            8157
+PATTERN             8106
+PROCESS_LEN         8108
+SECOND_LOOP         803E
+START               8000
+START_ADDR          8102
+SUMMED_STR          8127
+__LONG_EXIT         80FC
+__LONG_LOOP         80DE

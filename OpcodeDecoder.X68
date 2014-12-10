@@ -58,7 +58,7 @@ OC_SUFFIX_A         EQU     $1
 OC_SUFFIX_R         EQU     $2
 OC_SUFFIX_L         EQU     $3
 
-START_ADDRESS       EQU     $4000
+START_ADDRESS       EQU     $00008000
 ERROR_MASK          EQU     %10000000
 
 BRA_CC              EQU     %0000
@@ -270,48 +270,8 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
-		MOVEA.W #START_ADDRESS, A6
-		
-		MOVE.W	#$600C,(A6)+
-		
-		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
-		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
-		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
-		MOVE.W	#ASL_INSTR,(A6)+	* ASL.B D4,D2
-		MOVE.W	#ASL_MS_INSTR,(A6)+	* ASL.W (A5)
-		MOVE.W	#ASR_INSTR,(A6)+	* ASR.W D6,D0
-		MOVE.W	#ASR_MS_INSTR,(A6)+	* ASR.W (A5)
-		MOVE.L	#BEQ_INSTR,(A6)+
-		MOVE.L	#BRA_INSTR,(A6)+
-		MOVE.L	#CMPI_INSTR,(A6)+	* CMPI.W #$0005,D7
-		MOVE.W	#DIVS_INSTR,(A6)+	* DIVS.W D0,D4
-		MOVE.L	#EOR_INSTR,(A6)+	* EOR.W D2,$6000
-		MOVE.L	#EORI_INSTR,(A6)+	* EORI.W #$0007,D1
-		MOVE.W	#JSR_INSTR_OC,(A6)+	* JSR $0000101A
-		MOVE.L	#JSR_INSTR_DATA,(A6)+
-		MOVE.L  #LEA_INSTR,(A6)+	* LEA $5000,A5
-		MOVE.W  #LSL_ID_INSTR,(A6)+ * LSL.L #$00000008, D7
-		MOVE.W	#LSL_INSTR,(A6)+	* LSL.W D5,D1
-		MOVE.W  #LSL_MS_INSTR,(A6)+ * LSL.W (A5)
-		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
-		MOVE.L  #MOVEA_INSTR,(A6)+	* MOVEA.W #$4000,A2
-		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
-		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $00008000
-		MOVE.L	#NEG_INSTR_DATA,(A6)+
-		MOVE.W  #NOT_INSTR, (A6)+	* NOT.L D5
-		MOVE.L  #ORI_INSTR,(A6)+	* ORI.B #$0036,D3
-		MOVE.W  #ROL_INSTR,(A6)+	* ROL.B D2,D5
-		MOVE.W  #ROL_MS_INSTR,(A6)+	* ROL.W (A5)
-		MOVE.W  #ROR_ID_INSTR,(A6)+	* ROR.W #0004,D1
-		MOVE.W  #ROR_INSTR,(A6)+	* ROR.L D7,D0
-		MOVE.W  #ROR_MS_INSTR,(A6)+	* ROR.W (A5)
-		MOVE.W  #RTS_INSTR,(A6)+
-		MOVE.L  #SUBA_INSTR,(A6)+	* SUBA.W $A000,A4
-		MOVE.W  #SUBI_INSTR,(A6)+	* SUBI.L #$00000309,$09381764
-		MOVE.L  #SUBI_INSTR_2,(A6)+
-		MOVE.L  #SUBI_INSTR_3,(A6)+	
-		MOVE.W  #INVALID_INSTR,(A6)
-		
+		MOVEA.L #START_ADDRESS, A6
+
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
         *MOVEA.W #START_ADDRESS, A2
@@ -326,11 +286,11 @@ ITE		EQU		$FDFFFF
 *==============================
 *----------I/O MODULE----------
 *==============================
-		MOVE.B	#$0,ITE
-		MOVE.B	#$0,DPCT
+		MOVE.B	#$0,(ITE)
+		MOVE.B	#$0,(DPCT)
 		JSR		DPTITLE
-		MOVEA.W	#START_ADDRESS,A2	* Start Addr
-		MOVEA.W	A6,A3				* End Addr
+		MOVEA.L	#START_ADDRESS,A2	* Start Addr
+		MOVEA.L	#$00008176, A3				* End Addr
 		MOVE.W	#$FF00,D1
 		MOVE.B	#11,D0
 		TRAP	#15
@@ -353,7 +313,8 @@ IOEND	MOVE.B	#9,D0
 * Stack data starts from $FE0000,
 * and A6 will hold SSP.
 * Data will be stacked down.
-SD		MOVEA.L	#SSTACK,A6
+SD		MOVEA.L	#SSTACK,A6		* Presets
+		MOVE.B	#1,(ITE)
 		MOVE.B	#$FD,(A6)+		* Front Matter
 		MOVE.L	A2,D7
 		ROL.L	#8,D7
@@ -3888,6 +3849,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
