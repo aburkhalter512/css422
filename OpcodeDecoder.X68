@@ -329,8 +329,6 @@ ITE		EQU		$FDFFFF
 		MOVE.B	#$0,(ITE)
 		MOVE.B	#$0,(DPCT)
 		JSR		DPTITLE
-		MOVEA.L	#START_ADDRESS,A2	* Start Addr
-		MOVEA.L	#$00008176, A3				* End Addr
 		MOVE.W	#$FF00,D1
 		MOVE.B	#11,D0
 		TRAP	#15
@@ -820,14 +818,97 @@ SD_DAT	MOVE.B	#$33,(A6)+
 *==============================
 *--------Display Module--------
 *==============================
+ERRIN	LEA		S30,A1
+		MOVE.B	#14,D0
+		TRAP	#15
+		LEA		SINVAL,A1
+		MOVE.B	#14,D0
+		TRAP	#15
+		MOVE.B	#0,D1
+		MOVE.B	#12,D0
+		TRAP	#15
+		MOVE.B	#5,D0
+		TRAP	#15
+		CMP.B	#$D,D1
+		BNE		ERRIN
+		MOVE.W	#$FF00,D1
+		MOVE.B	#11,D0
+		TRAP	#15
+		MOVE.B	#1,D1
+		MOVE.B	#12,D0
+		TRAP	#15
+		CLR		D0
+		CLR		D1
+		CLR		D5
+		CLR		D6
+		CLR		D7
+		MOVE.L	#$0,SP
 DPTITLE	LEA		TITLE,A1
 		MOVE.B	#14,D0
 		TRAP	#15
-INLOOP	MOVE.B	#5,D0
+		LEA		SSTADDR,A1
+		MOVE.B	#14,D0
 		TRAP	#15
-		CMP.B	#$D,D1
-		BNE		DPLOOP
+		JSR		STARTIN
+		LEA		SEDADDR,A1
+		MOVE.B	#14,D0
+		TRAP	#15
+		JSR		ENDIN
 		RTS
+STARTIN	MOVE.B  #2,D0
+		TRAP    #15
+		CMP.B	#8,D1
+		BNE		ERRIN
+		JSR		INHEX
+		MOVE.L	D6,A2
+		CLR		D6
+		RTS
+ENDIN	MOVE.B  #2,D0
+		TRAP    #15
+		CMP.B	#8,D1
+		BNE		ERRIN
+		JSR		INHEX
+		MOVE.L	D6,A3
+		CLR		D6
+		RTS
+INHEX	MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+		MOVE.B	(A1)+,-(SP)
+INHLOOP	CMP.B	#$0,D1
+		BNE		INHPROC
+		RTS
+INHPROC	SUB.B	#$1,D1
+		MOVE.B	(SP)+,D7
+		CMP.B	#$30,D7
+		BLT		ERRIN
+		CMP.B	#$40,D7
+		BLT		INNUM
+		CMP.B	#$40,D7
+		BEQ		ERRIN
+		CMP.B	#$47,D7
+		BLT		INUPPER
+		CMP.B	#$61,D7
+		BLT		ERRIN
+		CMP.B	#$67,D7
+		BLT		INLOWER
+		JMP		ERRIN
+INNUM	SUB.B	#$30,D7
+		OR.L	D7,D6
+		ROR.L	#$4,D6
+		JMP		INHLOOP
+INUPPER	SUB.B	#$31,D7
+		OR.L	D7,D6
+		ROR.L	#$4,D6
+		JMP		INHLOOP
+INLOWER	SUB.B	#$51,D7
+		OR.L	D7,D6
+		ROR.L	#$4,D6
+		JMP		INHLOOP
 DPLOOP	MOVE.B	#$0,DPCT
 		MOVE.B	#0,D1
 		MOVE.B	#12,D0
@@ -3851,7 +3932,6 @@ LF		EQU		$0A				* ASCII for Line Feed
 SSTACK	EQU		$FE0000
 *------Title Screen-------
 TITLE	DC.B	'***************************........****************************',CR,LF
-		DC.B	'***************************........****************************',CR,LF
 		DC.B	'*****.....*****...*********........*********...*****.....******',CR,LF
 		DC.B	'******....*****...*********........*********...*****....*******',CR,LF
 		DC.B	'*******.....***...*********........*********...***.....********',CR,LF
@@ -3871,8 +3951,10 @@ TITLE	DC.B	'***************************........****************************',CR,
 		DC.B	'*******.....***...*********........*********...***.....********',CR,LF
 		DC.B	'******....*****...*********........*********...*****....*******',CR,LF
 		DC.B	'*****.....*****...*********........*********...*****.....******',CR,LF
-		DC.B	'***************************........****************************',CR,LF
 		DC.B	'***************************........****************************',CR,LF,0
+SSTADDR	DC.B	'Starting Address >> ',0
+SEDADDR	DC.B	'Ending Address >> ',0
+SINVAL	DC.B	'Invalid Input: Input should be Longword Hexadecimal number',CR,LF,0
 ;=================== Test Data ================================================
 TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
 TEST_MOVE_1         DC.W    %0011001010001110           ;MOVE.W A6, (A1)
@@ -3886,6 +3968,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
