@@ -272,6 +272,8 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 		MOVEA.W #START_ADDRESS, A6
 		
+		MOVE.W	#$600C,(A6)+
+		
 		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
 		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
 		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
@@ -1276,6 +1278,7 @@ PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     
                     MOVE.B  D0, -(SP)               ; Put the opcode size on the stack.
                     MOVE.B  D5, -(SP)               ; Put the opcode code on the stack.
+                    MOVE.B  D7, -(SP)               ; Put the displacement word count on the stack.
                     
                     MOVE.L  A2, -(SP)               ; Put the current instruction address on the stack.
                     MOVE.L  D2, -(SP)               ; Put the branching address on the stack.
@@ -1299,6 +1302,7 @@ PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                                                     ; The data *should* be a long.
                     
                     MOVE.L  (SP)+, A2               ; Restore the current instruction address.
+                    MOVE.B  (SP)+, D7               ; Get the displacement word count from the stack.
                     MOVE.B  (SP)+, D5               ; Get the opcode code from the stack.
                     MOVE.B  (SP)+, D4               ; Get the opcode size from the stack.
                     MOVE.L  (SP)+, A6               ; Get the RTS value from the stack.
@@ -1306,9 +1310,6 @@ PROCESS_Bcc_OC      MOVE.L  (SP)+, D0
                     MOVE.L  D2, -(SP)               ; Put the data back on the stack.
                     MOVE.B  D1, -(SP)               ; Put the eaType back on the stack.
                     MOVE.B  D0, -(SP)               ; Put the return size back on the stack.
-                    
-                    * Word Count
-                    MOVE.L  #2, D7
                     
                     * EA Count
                     MOVE.L  #1, D6
@@ -1363,6 +1364,9 @@ PREPROCESS_Bcc_BYTE * Size
                     * Destination Address
                     ADD.B   D3, D2
                     
+                    * Word Count
+                    MOVE.B  #2, D7
+                    
                     RTS
                     
 PREPROCESS_Bcc_WORD * Size
@@ -1376,6 +1380,9 @@ PREPROCESS_Bcc_WORD * Size
                     
                     * Destination Address
                     ADD.W   D3, D2
+                    
+                    * Word Count
+                    MOVE.B  #0, D7
                     
                     RTS
 
