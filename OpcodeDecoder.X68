@@ -214,7 +214,7 @@ TBL_MASK_DATA       EQU     %10000000
 * ADD Masks
 TBL_MASK_ADD_SRC    EQU     %11111111
 TBL_MASK_ADD_DST    EQU     %01111100
-TBL_MASK_ADDQ_DST   EQU     %01111111
+TBL_MASK_ADDQ       EQU     %01111111
 
 * AND Masks
 TBL_MASK_AND_SRC    EQU     %11111101
@@ -272,10 +272,11 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 		MOVEA.L #START_ADDRESS, A6
 
-		MOVE.W	#$1619,(A6)+
-		MOVE.W	#$1621,(A6)+
+		*MOVE.W	#$1619,(A6)+
+		*MOVE.W	#$1621,(A6)+
 *		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
 *		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
+        MOVE.W  #ADDQ_INSTR, (A6)+  * ADDQ.W #7, D5
 *		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
 *		MOVE.W	#ASL_INSTR,(A6)+	* ASL.B D4,D2
 *		MOVE.W	#ASL_MS_INSTR,(A6)+	* ASL.W (A5)
@@ -930,7 +931,6 @@ CLR_DATA_REGISTERS  CLR.L   D0
                     CLR.L   D5
                     CLR.L   D6
                     CLR.L   D7
-                    
                     RTS
 
 OC_ERROR            MOVE.L  #$00FFFFFC, A7 ; Move the SP to the RTS value, effectively cleaning the stack.
@@ -1732,7 +1732,149 @@ CHECK_ADDQ_OC       MOVE.W  (A2), D0
                     BEQ     PROCESS_ADDQ_OC
                     RTS
 
-PROCESS_ADDQ_OC     BRA     OC_ERROR
+PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
+                    CLR     D0
+                    
+                    * Size
+                    MOVE.W  (A2), D0
+                    LSL.W   #8, D0
+                    LSR.W   #8, D0
+                    LSR.W   #6, D0
+                    ADDI.B  #1, D0
+                    
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
+                    
+                    * Source Mode
+                    MOVE.B  #EA_MODE_DATA, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.B  #EA_DATA_REG, D3
+                    OR.B    D3, D1
+                    
+                    * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    LSL.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+                    
+                    JSR     CHECK_ADDQ_DATA
+                    
+                    MOVE.B  D0, -(SP)               ; Put the opcode size on the stack.
+                    MOVE.B  D1, -(SP)               ; Put the source bit-packed byte on the stack.
+
+                    MOVE.B  #0, -(SP)               ; Put the destination offset on the stack.
+                    MOVE.B  #TBL_MASK_ADDQ, -(SP)   ; Put the destination table mask on the stack.
+                    MOVE.B  D2, -(SP)               ; Put the destination bit-packed byte on the stack.
+                    
+                    JSR     GET_DESTINATION_EA
+                    JSR     OC_CHECK_ERROR
+                    
+                    MOVE.B  (SP)+, D0               ; Get the destination return size from the stack.
+                    MOVE.B  (SP)+, D1               ; Get the destination eaType from the stack.
+                    
+                    SUBI.B  #1, D0                  ; Return size - 1 is the amount of destination data on the stack.
+                    
+                    JSR     OC_XDFS
+                    
+                    MOVE.B  (SP)+, D2               ; Get the source bit-packed byte from the stack.
+                    MOVE.B  (SP)+, D4               ; Get the opcode size from the stack.
+                    
+                    JSR     OC_XDTS
+                    
+                    MOVE.B  D1, -(SP)               ; Put the destination eaType back on the stack.
+                    ADDI.B  #1, D0                  ; Restore the original destination return size.
+                    MOVE.B  D0, -(SP)               ; Put the destination return size back on the stack.
+                    MOVE.B  D4, -(SP)               ; Put the opcode size back on the stack.
+                    
+                    * Data
+                    MOVE.W  (A2), D6
+                    LSL.W   #4, D6
+                    LSR.W   #8, D6
+                    LSR.W   #5, D6
+
+                    MOVE.L  A2, -(SP)               ; Put the current instruction address on the stack.
+                    MOVE.W  D6, -(SP)               ; Put the fake data on the stack.
+                    MOVE.W  (A2), -(SP)             ; Put the instruction on the stack.
+                    MOVE.L  SP, A2                  ; Put the current stack pointer in A2.
+                                                    ; This is what fools GET_DESTINATION_EA.
+
+                    MOVE.B  #TBL_MASK_DATA, -(SP)   ; Put the source table mask on the stack.
+                    MOVE.B  D2, -(SP)               ; Put the source bit-packed byte back on the stack.
+                    
+                    JSR     GET_SOURCE_EA
+                    JSR     OC_CHECK_ERROR
+                    
+                    MOVE.B  (SP)+, D0               ; Get the source return size from the stack.
+                    MOVE.B  (SP)+, D1               ; Get the source eaType from the stack.
+                    
+                    SUBI.B  #1, D0                  ; Return size - 1 is the amount of source data on the stack.
+                    
+                    JSR     OC_XDFS
+                    
+                    MOVE.L  D7, D2                  ; Put the source data in the appropriate register.
+                    MOVE.W  (SP)+, D7               ; Get the true instruction from the stack.
+                    
+                    JSR     OC_XDFS                 ; Get the fake data from the stack.
+                    
+                    MOVE.L  (SP)+, A2               ; Restore the original instruction address.
+                    MOVE.B  (SP)+, D4               ; Get the opcode size from the stack.
+                    
+                    LSL.W   #8, D0                  ; Shift the source return size to the left by one byte.
+                    LSL.W   #8, D1                  ; Shift the source eaType left by one byte.
+                    
+                    MOVE.B  (SP)+, D0               ; Get the destination return size from the stack.
+                    MOVE.B  (SP)+, D1               ; Get the destination eaType from the stack.
+                    
+                    SUBI.B  #1, D0                  ; Return size - 1 is the amount of destination data on the stack.
+                    
+                    JSR     OC_XDFS
+                    
+                    MOVE.L  (SP)+, A6               ; Get the RTS value from the stack.
+                    
+                    JSR     OC_XDTS
+                    
+                    MOVE.B  D1, -(SP)               ; Put the destination eaType back on the stack.
+                    ADDI.B  #1, D0                  ; Restore the original destination return size.
+                    MOVE.B  D0, -(SP)               ; Put the destination return size back on the stack.
+                    
+                    LSR.W   #8, D0                  ; Shift the destination return size right by one byte.
+                    LSR.W   #8, D1                  ; Shift the destination eaType right by one byte.
+                    
+                    MOVE.L  D2, D7                  ; Prepare to move the source data back on the stack.
+                    
+                    JSR     OC_XDTS
+                    
+                    MOVE.B  D1, -(SP)               ; Put the source eaType back on the stack.
+                    ADDI.B  #1, D0                  ; Restore the original source return size.
+                    MOVE.B  D0, -(SP)               ; Put the source return size back on the stack.
+                    
+                    MOVE.B  #ADDQ_OC_CODE, D5       ; Prepare the opcode code.
+                    MOVE.B  #0, D7                  ; Prepare the word count.
+                    MOVE.B  #2, D6                  ; Prepare the EA count.
+                    
+                    BRA     OC_CREATE_RETVAL
+
+CHECK_ADDQ_DATA     CMPI.B  #0, D6
+                    BEQ     FIX_ADDQ_DATA
+                    RTS
+
+FIX_ADDQ_DATA       MOVE.B  #8, D6
+                    RTS
 
 *------------------------------------------------------------------------------
 * AND
@@ -3968,6 +4110,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
