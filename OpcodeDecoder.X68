@@ -838,20 +838,14 @@ DPLOOP	MOVE.B	#$0,DPCT
 		TRAP	#15
 		JMP		IOLOOP
 		
-CLEAR_REGISTERS     CLR     D0
-                    CLR     D1
-                    CLR     D2
-                    CLR     D3
-                    CLR     D4
-                    CLR     D5
-                    CLR     D6
-                    CLR     D7
-                    
-                    CLR     A0
-                    CLR     A1
-                    CLR     A4
-                    CLR     A5
-                    CLR     A6
+CLR_DATR_REGISTERS  CLR.L   D0
+                    CLR.L   D1
+                    CLR.L   D2
+                    CLR.L   D3
+                    CLR.L   D4
+                    CLR.L   D5
+                    CLR.L   D6
+                    CLR.L   D7
                     
                     RTS
 
@@ -1460,7 +1454,7 @@ PREPROCESS_Bcc_WORD * Size
 *           The most significant bit will be 1 indicating an error. No other information
 *           will be on the stack (clean).
 * =============================================================================
-PROCESS_OC          JSR     CLEAR_REGISTERS
+PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
@@ -3887,6 +3881,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
