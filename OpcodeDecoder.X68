@@ -838,7 +838,7 @@ DPLOOP	MOVE.B	#$0,DPCT
 		TRAP	#15
 		JMP		IOLOOP
 		
-CLR_DATR_REGISTERS  CLR.L   D0
+CLR_DATa_REGISTERS  CLR.L   D0
                     CLR.L   D1
                     CLR.L   D2
                     CLR.L   D3
@@ -3881,6 +3881,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
