@@ -6,7 +6,7 @@
 CR      EQU     $0D
 LF      EQU     $0A
 
-    ORG    $4000
+    ORG    $8000
 START:
 
                 MOVE.B #$0F, $7A50          ;Load the pattern into the pattern location for testing
@@ -153,6 +153,7 @@ Carry           DS.B        1           ;The carry bit for Addsum
 HEX_STRING      DS.B        9           ;The storage for the string version of a long value + 1 for NULL character
 
     END    START        ; last line of source
+
 
 
 
