@@ -173,8 +173,8 @@ ERR_STACK_OVERFLOW  EQU    %10000101   ;5
 ; Only the last 3 bits matter
 EA_SUFFIX_NONE      EQU    %00000000
 EA_SUFFIX_IND       EQU    %00000001   ;(An)
-EA_SUFFIX_INC       EQU    %00000010   ;(An)+
-EA_SUFFIX_DEC       EQU    %00000011   ;-(An)
+EA_SUFFIX_INC       EQU    %00000011   ;(An)+
+EA_SUFFIX_DEC       EQU    %00000010   ;-(An)
 EA_SUFFIX_W         EQU    %00000100   ;(xxx).W
 EA_SUFFIX_L         EQU    %00000101   ;(xxx).L
 EA_SUFFIX_DATA      EQU    %00000111   ;#<data>
