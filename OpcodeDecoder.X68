@@ -271,9 +271,9 @@ ITE		EQU		$FDFFFF
 * ================== Begin Program ============================================
 * =============================================================================
 		MOVEA.L #START_ADDRESS, A6
-		
-*		MOVE.W	#$600C,(A6)+
-*		
+
+		MOVE.W	#$1619,(A6)+
+		MOVE.W	#$1621,(A6)+
 *		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
 *		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
 *		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
@@ -754,9 +754,9 @@ SDEA	CMP.B	#$80,D7			* Validity Check
 		CMP.B	#$30,D7			* Parenthesis
 		BLT		SD_PAR
 		CMP.B	#$50,D7			* Pre Decrement
-		BLT		SD_PRD
-		CMP.B	#$70,D7			* Post Increment
 		BLT		SD_POI
+		CMP.B	#$70,D7			* Post Increment
+		BLT		SD_PRD
 SDEATP	CMP.B	#1,D5
 		BNE		SDDATA
 SDREG	LSL.B	#4,D7
@@ -3886,6 +3886,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
