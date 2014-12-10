@@ -477,7 +477,7 @@ SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
 *-----STRING STACK DECODER-----
 * Prints strings using String Stack
 SSD		MOVE.L	#$0,SP
-		CLR		D5
+
 		CMPA.L	A6,A5
 		BGT		IOLOOP
 		MOVE.L	#$00000000,D7
@@ -3936,6 +3936,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
