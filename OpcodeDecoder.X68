@@ -341,6 +341,7 @@ IOLOOP	CMP.B	#$17,DPCT
 		CMPA.L	A3,A2
 		BGT		IOEND
 		MOVE.L	#$0,SP
+		CLR		D5
 		JSR		PROCESS_OC
 		JMP		SD					* Place Break Here
 IOEND	MOVE.B	#9,D0
@@ -350,8 +351,19 @@ IOEND	MOVE.B	#9,D0
 * Stack data starts from $FE0000,
 * and A6 will hold SSP.
 * Data will be stacked down.
-SD		MOVE.W	(SP)+,D7
-		MOVEA.L	#SSTACK,A6
+SD		MOVEA.L	#SSTACK,A6
+		MOVE.B	#$FD,(A6)+		* Front Matter
+		MOVE.L	A2,D7
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		ROL.L	#8,D7
+		MOVE.B	D7,(A6)+
+		MOVE.B	#$09,(A6)+
+		MOVE.W	(SP)+,D7
 		CMP.W	#$0000,D7		* Validity Check/Iteration Setting
 		BLT		SD_ERR
 		ROL.W	#5,D7
@@ -379,24 +391,14 @@ SDSIZE	LSL.B	#6,D7			* Size Decoder
 		CMP.B	#$C0,D7
 		BEQ		SD_LWRD
 		JMP		SD_ERR
-SD_NSZ	MOVE.B	#$09,(A6)+
-		JMP		SDEAD
+SD_NSZ	JMP		SDEAD
 SD_BYTE	MOVE.B	#$00,(A6)+
-		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
 SD_WORD	MOVE.B	#$01,(A6)+
-		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
 SD_LWRD	MOVE.B	#$02,(A6)+
-		MOVE.B	#$09,(A6)+
 		JMP		SDEAD
-SDEAD	CLR		D1				* EA Decoder
-		CLR		D2
-		CLR		D3
-		CLR		D4
-		CLR		D5
-		CLR		D7
-		CMP.B	#0,D6
+SDEAD	CMP.B	#0,D6			* EA Decoder
 		BEQ		SDEND
 		MOVE.L	SP,A1
 		MOVE.B	(A1)+,D5		* D5 - 1 = Total Bytes assigned for Data in stack
@@ -452,18 +454,7 @@ SDDTED2	JSR 	SDEA
 SDEND	MOVE.B	#$30,(A6)		* Line Feeding
 		MOVEA.L	#SSTACK,A5
 		JMP		SSD
-SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
-		MOVE.L	A2,D7
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		ROL.L	#8,D7
-		MOVE.B	D7,(A6)+
-		MOVE.B	#$09,(A6)+
-		MOVE.B	#$31,(A6)+
+SD_ERR	MOVE.B	#$31,(A6)+		* Error Handler
 		MOVE.B	#$09,(A6)+
 		MOVE.B	#$32,(A6)+
 		MOVE.B	#$FE,(A6)+
@@ -477,7 +468,6 @@ SD_ERR	MOVE.B	#$FD,(A6)+		* Error Handler
 *-----STRING STACK DECODER-----
 * Prints strings using String Stack
 SSD		MOVE.L	#$0,SP
-
 		CMPA.L	A6,A5
 		BGT		IOLOOP
 		MOVE.L	#$00000000,D7
