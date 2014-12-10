@@ -838,9 +838,9 @@ ERRIN	LEA		SINVAL,A1
 		CLR		D0
 		CLR		D1
 		CLR		D5
-		CLR		D6
+		CLR.L	D6
 		CLR		D7
-		MOVE.L	#$0,SP
+		MOVE.L	#$00FFFFFC,SP	* Leaving Space for RTS
 DPTITLE	LEA		TITLE,A1
 		MOVE.B	#14,D0
 		TRAP	#15
@@ -863,8 +863,12 @@ STARTIN	MOVE.L	#$0,A1
 		BLT		ERRIN
 		CMP.L	#$00FCFFFF,D6
 		BGT		ERRIN
+		ROR.L   #$1,D6
+		CMP.L   #$00000000,D6
+		BLT     ERRIN
+		ROL.L   #$1,D6
 		MOVE.L	D6,A2
-		CLR		D6
+		CLR.L	D6
 		RTS
 ENDIN	MOVE.L	#$0,A1
 		MOVE.B  #2,D0
@@ -877,7 +881,7 @@ ENDIN	MOVE.L	#$0,A1
 		CMP.L	#$00FCFFFF,D6
 		BGT		ERRIN
 		MOVE.L	D6,A3
-		CLR		D6
+		CLR.L	D6
 		RTS
 INHEX	MOVE.B	(A1)+,-(SP)
 		MOVE.B	(A1)+,-(SP)
@@ -909,7 +913,7 @@ INNUM	SUB.B	#$30,D7
 		OR.L	D7,D6
 		ROR.L	#$4,D6
 		JMP		INHLOOP
-INUPPER	SUB.B	#$31,D7
+INUPPER	SUB.B	#$37,D7
 		OR.L	D7,D6
 		ROR.L	#$4,D6
 		JMP		INHLOOP
@@ -4108,8 +4112,8 @@ TITLE	DC.B	'                  ::                 :%@@%:                 .:      
 		DC.B	'     =*           .+##*     :*#%%#%%*%%@@%@*%%#%%#*:     *##+.           *=     ',CR,LF
 		DC.B	'                                      .@@.                                      ',CR,LF
 		DC.B	'  68K Disassembler  presented by Adam Burkhalter, Jongwook Kim, & Terry Rogers  ',CR,LF,0
-SSTADDR	DC.B	'Starting Address      ($00004000 ~ $00FCFFFE) >> ',0
-SEDADDR	DC.B	'Ending Address (Starting Address ~ $00FCFFFE) >> ',0
+SSTADDR	DC.B	'Starting Address (Even#, $00004000 ~ $00FCFFFE) >> ',0
+SEDADDR	DC.B	'Ending Address   (Starting Address ~ $00FCFFFE) >> ',0
 SINVAL	DC.B	'Invalid Input',0
 ;=================== Test Data ================================================
 TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
@@ -4124,6 +4128,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
