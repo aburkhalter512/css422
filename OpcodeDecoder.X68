@@ -838,7 +838,7 @@ DPLOOP	MOVE.B	#$0,DPCT
 		TRAP	#15
 		JMP		IOLOOP
 		
-CLR_DATa_REGISTERS  CLR.L   D0
+CLR_DATA_REGISTERS  CLR.L   D0
                     CLR.L   D1
                     CLR.L   D2
                     CLR.L   D3
