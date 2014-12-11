@@ -1566,7 +1566,6 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
-                    *JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -1583,6 +1582,7 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_NEG_OC
                     JSR     CHECK_MEM_SHIFT_OC
                     JSR     CHECK_REG_SHIFT_OC
+                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     OC_ERROR
@@ -4214,6 +4214,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
