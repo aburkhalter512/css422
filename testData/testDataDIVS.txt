@@ -1,36 +1,36 @@
-DIVS.W D3, D3
+	DIVS.W D3, D3
 
 
 
-DIVS.W (A7), D3
+	DIVS.W (A7), D3
 
 
 
-DIVS.W (A5)+, D3
+	DIVS.W (A5)+, D3
 
 
 
-DIVS.W -(A1), D3
+	DIVS.W -(A1), D3
 
 
 
-DIVS.W $37A7, D3
+	DIVS.W $37A7, D3
 
 
 
-DIVS.W $0089014F, D3
+	DIVS.W $0089014F, D3
 
 
 
-DIVS.W #$48, D3
+	DIVS.W #$48, D3
 
 
 
-DIVS.W #$632B, D3
+	DIVS.W #$632B, D3
 
 
 
-DIVS.W #$DED24AA5, D3
+	DIVS.W #$DED24AA5, D3
 
 
 
