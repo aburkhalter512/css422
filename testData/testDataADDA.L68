@@ -1,0 +1,79 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:56:17 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000  DCC3                      10      ADDA.W D3, A6
+00008002  DDC3                      11      ADDA.L D3, A6
+00008004                            12  
+00008004                            13  
+00008004                            14  
+00008004  DCCE                      15      ADDA.W A6, A6
+00008006  DDCE                      16      ADDA.L A6, A6
+00008008                            17  
+00008008                            18  
+00008008                            19  
+00008008  DCD7                      20      ADDA.W (A7), A6
+0000800A  DDD7                      21      ADDA.L (A7), A6
+0000800C                            22  
+0000800C                            23  
+0000800C                            24  
+0000800C  DCDD                      25      ADDA.W (A5)+, A6
+0000800E  DDDD                      26      ADDA.L (A5)+, A6
+00008010                            27  
+00008010                            28  
+00008010                            29  
+00008010  DCE1                      30      ADDA.W -(A1), A6
+00008012  DDE1                      31      ADDA.L -(A1), A6
+00008014                            32  
+00008014                            33  
+00008014                            34  
+00008014  DCF8 7814                 35      ADDA.W $7814, A6
+00008018  DDF8 7814                 36      ADDA.L $7814, A6
+0000801C                            37  
+0000801C                            38  
+0000801C                            39  
+0000801C  DCF9 009E58BF             40      ADDA.W $009E58BF, A6
+00008022  DDF9 009E58BF             41      ADDA.L $009E58BF, A6
+00008028                            42  
+00008028                            43  
+00008028                            44  
+00008028  DCFC 0044                 45      ADDA.W #$44, A6
+0000802C  DDFC 00000044             46      ADDA.L #$44, A6
+00008032                            47  
+00008032                            48  
+00008032                            49  
+00008032  DCFC A284                 50      ADDA.W #$A284, A6
+00008036  DDFC 0000A284             51      ADDA.L #$A284, A6
+0000803C                            52  
+0000803C                            53  
+0000803C                            54  
+0000803C  DCFC D276                 55      ADDA.W #$D276, A6
+00008040  DDFC D27691E4             56      ADDA.L #$D27691E4, A6
+00008046                            57  
+00008046                            58  
+00008046                            59  
+00008046                            60  
+00008046                            61  
+00008046  FFFF FFFF                 62      SIMHALT             ; halt simulator
+0000804A                            63  
+0000804A                            64  * Put variables and constants here
+0000804A                            65  
+0000804A                            66      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

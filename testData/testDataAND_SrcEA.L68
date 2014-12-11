@@ -1,0 +1,83 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 8:10:49 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000  C603                      10      AND.B D3, D3
+00008002  C643                      11      AND.W D3, D3
+00008004  C683                      12      AND.L D3, D3
+00008006                            13  
+00008006                            14  
+00008006                            15  
+00008006  C617                      16      AND.B (A7), D3
+00008008  C657                      17      AND.W (A7), D3
+0000800A  C697                      18      AND.L (A7), D3
+0000800C                            19  
+0000800C                            20  
+0000800C                            21  
+0000800C  C61D                      22      AND.B (A5)+, D3
+0000800E  C65D                      23      AND.W (A5)+, D3
+00008010  C69D                      24      AND.L (A5)+, D3
+00008012                            25  
+00008012                            26  
+00008012                            27  
+00008012  C621                      28      AND.B -(A1), D3
+00008014  C661                      29      AND.W -(A1), D3
+00008016  C6A1                      30      AND.L -(A1), D3
+00008018                            31  
+00008018                            32  
+00008018                            33  
+00008018  C638 3E5B                 34      AND.B $3E5B, D3
+0000801C  C678 3E5B                 35      AND.W $3E5B, D3
+00008020  C6B8 3E5B                 36      AND.L $3E5B, D3
+00008024                            37  
+00008024                            38  
+00008024                            39  
+00008024  C639 00623FBB             40      AND.B $00623FBB, D3
+0000802A  C679 00623FBB             41      AND.W $00623FBB, D3
+00008030  C6B9 00623FBB             42      AND.L $00623FBB, D3
+00008036                            43  
+00008036                            44  
+00008036                            45  
+00008036  C63C 00DF                 46      AND.B #$DF, D3
+0000803A  C67C 00DF                 47      AND.W #$DF, D3
+0000803E  C6BC 000000DF             48      AND.L #$DF, D3
+00008044                            49  
+00008044                            50  
+00008044                            51  
+00008044  C63C 00AA                 52      AND.B #$AA, D3
+00008048  C67C AAC7                 53      AND.W #$AAC7, D3
+0000804C  C6BC AAC7F214             54      AND.L #$AAC7F214, D3
+00008052                            55  
+00008052                            56  
+00008052                            57  
+00008052  C63C 00DF                 58      AND.B #$DF, D3
+00008056  C67C DF1C                 59      AND.W #$DF1C, D3
+0000805A  C6BC DF1C4B91             60      AND.L #$DF1C4B91, D3
+00008060                            61  
+00008060                            62  
+00008060                            63  
+00008060                            64  
+00008060                            65  
+00008060  FFFF FFFF                 66      SIMHALT             ; halt simulator
+00008064                            67  
+00008064                            68  * Put variables and constants here
+00008064                            69  
+00008064                            70      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

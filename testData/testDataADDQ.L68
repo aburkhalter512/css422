@@ -1,0 +1,55 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 8:07:44 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000  5003                      10      ADDQ.B #$8, D3
+00008002  5843                      11      ADDQ.W #$4, D3
+00008004  5E83                      12      ADDQ.L #$7, D3
+00008006                            13  
+00008006  584E                      14      ADDQ.W #$4, A6
+00008008  5E8E                      15      ADDQ.L #$7, A6
+0000800A                            16  
+0000800A  5017                      17      ADDQ.B #$8, (A7)
+0000800C  5857                      18      ADDQ.W #$4, (A7)
+0000800E  5E97                      19      ADDQ.L #$7, (A7)
+00008010                            20  
+00008010  501D                      21      ADDQ.B #$8, (A5)+
+00008012  585D                      22      ADDQ.W #$4, (A5)+
+00008014  5E9D                      23      ADDQ.L #$7, (A5)+
+00008016                            24  
+00008016  5021                      25      ADDQ.B #$8, -(A1)
+00008018  5861                      26      ADDQ.W #$4, -(A1)
+0000801A  5EA1                      27      ADDQ.L #$7, -(A1)
+0000801C                            28  
+0000801C  5039 00009560             29      ADDQ.B #$8, $9560
+00008022  5879 00009560             30      ADDQ.W #$4, $9560
+00008028  5EB9 00009560             31      ADDQ.L #$7, $9560
+0000802E                            32  
+0000802E  5039 00FA60EC             33      ADDQ.B #$8, $00FA60EC
+00008034  5879 00FA60EC             34      ADDQ.W #$4, $00FA60EC
+0000803A  5EB9 00FA60EC             35      ADDQ.L #$7, $00FA60EC
+00008040                            36  
+00008040                            37  
+00008040  FFFF FFFF                 38      SIMHALT             ; halt simulator
+00008044                            39  
+00008044                            40  * Put variables and constants here
+00008044                            41  
+00008044                            42      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000
