@@ -4,7 +4,6 @@ CMP.L D3, D3
 
 
 
-CMP.B A6, D3
 CMP.W A6, D3
 CMP.L A6, D3
 
@@ -46,15 +45,12 @@ CMP.L #$98, D3
 
 
 
-CMP.B #$C742, D3
+CMP.B #$C7, D3
 CMP.W #$C742, D3
 CMP.L #$C742, D3
 
 
 
-CMP.B #$807A2A90, D3
-CMP.W #$807A2A90, D3
+CMP.B #$80, D3
+CMP.W #$807A, D3
 CMP.L #$807A2A90, D3
-
-
-

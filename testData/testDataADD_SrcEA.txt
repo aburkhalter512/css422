@@ -4,9 +4,7 @@ ADD.L D3, D3
 
 
 
-ADD.B A6, D3
 ADD.W A6, D3
-ADD.L A6, D3
 
 
 
@@ -46,15 +44,12 @@ ADD.L #$A8, D3
 
 
 
-ADD.B #$8DBE, D3
+ADD.B #$8D, D3
 ADD.W #$8DBE, D3
-ADD.L #$8DBE, D3
+ADD.L #$8DBEF201, D3
 
 
 
-ADD.B #$96CF5D15, D3
-ADD.W #$96CF5D15, D3
+ADD.B #$96, D3
+ADD.W #$96CF, D3
 ADD.L #$96CF5D15, D3
-
-
-
