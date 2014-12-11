@@ -1539,7 +1539,7 @@ PREPROCESS_Bcc_WORD * Size
 * =============================================================================
 PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
-                    *JSR     CHECK_ADDQ_OC
+                    JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
@@ -1770,7 +1770,8 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     LSR.W   #5, D3
                     OR.B    D3, D2
                     
-                    JSR     CHECK_ADDQ_DATA
+                    ANDI.B  #%11100111, D1
+                    OR.B    #%00010000, D1
                     
                     MOVE.B  D0, -(SP)               ; Put the opcode size on the stack.
                     MOVE.B  D1, -(SP)               ; Put the source bit-packed byte on the stack.
@@ -1804,6 +1805,8 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     LSL.W   #4, D6
                     LSR.W   #8, D6
                     LSR.W   #5, D6
+                    
+                    JSR     CHECK_ADDQ_DATA
 
                     MOVE.L  A2, -(SP)               ; Put the current instruction address on the stack.
                     MOVE.W  D6, -(SP)               ; Put the fake data on the stack.
@@ -1822,7 +1825,7 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     
                     SUBI.B  #1, D0                  ; Return size - 1 is the amount of source data on the stack.
                     
-                    *JSR     OC_XDFS
+                    JSR     OC_XDFS
                     
                     MOVE.L  D7, D2                  ; Put the source data in the appropriate register.
                     MOVE.W  (SP)+, D7               ; Get the true instruction from the stack.
@@ -1839,6 +1842,7 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     MOVE.B  (SP)+, D1               ; Get the destination eaType from the stack.
                     
                     SUBI.B  #1, D0                  ; Return size - 1 is the amount of destination data on the stack.
+                    MOVE.B   D0, D6
                     
                     JSR     OC_XDFS
                     
@@ -1862,7 +1866,7 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     MOVE.B  D0, -(SP)               ; Put the source return size back on the stack.
                     
                     MOVE.B  #ADDQ_OC_CODE, D5       ; Prepare the opcode code.
-                    MOVE.B  #0, D7                  ; Prepare the word count.
+                    MOVE.B  D6, D7                  ; Prepare the word count.
                     MOVE.B  #2, D6                  ; Prepare the EA count.
                     
                     BRA     OC_CREATE_RETVAL
@@ -4301,6 +4305,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
