@@ -1,55 +1,119 @@
-00008000 Starting Address
+00000000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.15.02
-Created On: 12/10/2014 8:07:44 PM
+Created On: 12/10/2014 11:44:55 PM
 
-00000000                             1  *-----------------------------------------------------------
-00000000                             2  * Title      :
-00000000                             3  * Written by :
-00000000                             4  * Date       :
-00000000                             5  * Description:
-00000000                             6  *-----------------------------------------------------------
-00008000                             7      ORG    $8000
-00008000                             8  START:                  ; first instruction of program
-00008000                             9  
-00008000  5003                      10      ADDQ.B #$8, D3
-00008002  5843                      11      ADDQ.W #$4, D3
-00008004  5E83                      12      ADDQ.L #$7, D3
-00008006                            13  
-00008006  584E                      14      ADDQ.W #$4, A6
-00008008  5E8E                      15      ADDQ.L #$7, A6
-0000800A                            16  
-0000800A  5017                      17      ADDQ.B #$8, (A7)
-0000800C  5857                      18      ADDQ.W #$4, (A7)
-0000800E  5E97                      19      ADDQ.L #$7, (A7)
-00008010                            20  
-00008010  501D                      21      ADDQ.B #$8, (A5)+
-00008012  585D                      22      ADDQ.W #$4, (A5)+
-00008014  5E9D                      23      ADDQ.L #$7, (A5)+
-00008016                            24  
-00008016  5021                      25      ADDQ.B #$8, -(A1)
-00008018  5861                      26      ADDQ.W #$4, -(A1)
-0000801A  5EA1                      27      ADDQ.L #$7, -(A1)
-0000801C                            28  
-0000801C  5039 00009560             29      ADDQ.B #$8, $9560
-00008022  5879 00009560             30      ADDQ.W #$4, $9560
-00008028  5EB9 00009560             31      ADDQ.L #$7, $9560
-0000802E                            32  
-0000802E  5039 00FA60EC             33      ADDQ.B #$8, $00FA60EC
-00008034  5879 00FA60EC             34      ADDQ.W #$4, $00FA60EC
-0000803A  5EB9 00FA60EC             35      ADDQ.L #$7, $00FA60EC
-00008040                            36  
-00008040                            37  
-00008040  FFFF FFFF                 38      SIMHALT             ; halt simulator
-00008044                            39  
-00008044                            40  * Put variables and constants here
-00008044                            41  
-00008044                            42      END    START        ; last line of source
+Line 1 ERROR: Illegal symbol
+00000000                             1  00008000 Starting Address
+Line 2 ERROR: Invalid syntax
+00000000                             2  Assembler used: EASy68K Editor/Assembler v5.15.02
+Line 3 ERROR: Invalid syntax
+00000000                             3  Created On: 12/10/2014 8:07:44 PM
+00000000                             4  
+Line 5 ERROR: Illegal symbol
+00000000                             5  00000000                             1  *-----------------------------------------------------------
+Line 6 ERROR: Illegal symbol
+00000000                             6  00000000                             2  * Title      :
+Line 7 ERROR: Illegal symbol
+00000000                             7  00000000                             3  * Written by :
+Line 8 ERROR: Illegal symbol
+00000000                             8  00000000                             4  * Date       :
+Line 9 ERROR: Illegal symbol
+00000000                             9  00000000                             5  * Description:
+Line 10 ERROR: Illegal symbol
+00000000                            10  00000000                             6  *-----------------------------------------------------------
+Line 11 ERROR: Illegal symbol
+00000000                            11  00008000                             7      ORG    $8000
+Line 12 ERROR: Illegal symbol
+00000000                            12  00008000                             8  START:                  ; first instruction of program
+Line 13 ERROR: Illegal symbol
+00000000                            13  00008000                             9  
+Line 14 ERROR: Illegal symbol
+00000000                            14  00008000  5003                      10      ADDQ.B #$8, D3
+Line 15 ERROR: Illegal symbol
+00000000                            15  00008002  5843                      11      ADDQ.W #$4, D3
+Line 16 ERROR: Illegal symbol
+00000000                            16  00008004  5E83                      12      ADDQ.L #$7, D3
+Line 17 ERROR: Illegal symbol
+00000000                            17  00008006                            13  
+Line 18 ERROR: Illegal symbol
+00000000                            18  00008006  584E                      14      ADDQ.W #$4, A6
+Line 19 ERROR: Illegal symbol
+00000000                            19  00008008  5E8E                      15      ADDQ.L #$7, A6
+Line 20 ERROR: Illegal symbol
+00000000                            20  0000800A                            16  
+Line 21 ERROR: Illegal symbol
+00000000                            21  0000800A  5017                      17      ADDQ.B #$8, (A7)
+Line 22 ERROR: Illegal symbol
+00000000                            22  0000800C  5857                      18      ADDQ.W #$4, (A7)
+Line 23 ERROR: Illegal symbol
+00000000                            23  0000800E  5E97                      19      ADDQ.L #$7, (A7)
+Line 24 ERROR: Illegal symbol
+00000000                            24  00008010                            20  
+Line 25 ERROR: Illegal symbol
+00000000                            25  00008010  501D                      21      ADDQ.B #$8, (A5)+
+Line 26 ERROR: Illegal symbol
+00000000                            26  00008012  585D                      22      ADDQ.W #$4, (A5)+
+Line 27 ERROR: Illegal symbol
+00000000                            27  00008014  5E9D                      23      ADDQ.L #$7, (A5)+
+Line 28 ERROR: Illegal symbol
+00000000                            28  00008016                            24  
+Line 29 ERROR: Illegal symbol
+00000000                            29  00008016  5021                      25      ADDQ.B #$8, -(A1)
+Line 30 ERROR: Illegal symbol
+00000000                            30  00008018  5861                      26      ADDQ.W #$4, -(A1)
+Line 31 ERROR: Illegal symbol
+00000000                            31  0000801A  5EA1                      27      ADDQ.L #$7, -(A1)
+Line 32 ERROR: Illegal symbol
+00000000                            32  0000801C                            28  
+Line 33 ERROR: Illegal symbol
+00000000                            33  0000801C  5039 00009560             29      ADDQ.B #$8, $9560
+Line 34 ERROR: Illegal symbol
+00000000                            34  00008022  5879 00009560             30      ADDQ.W #$4, $9560
+Line 35 ERROR: Illegal symbol
+00000000                            35  00008028  5EB9 00009560             31      ADDQ.L #$7, $9560
+Line 36 ERROR: Illegal symbol
+00000000                            36  0000802E                            32  
+Line 37 ERROR: Illegal symbol
+00000000                            37  0000802E  5039 00FA60EC             33      ADDQ.B #$8, $00FA60EC
+Line 38 ERROR: Illegal symbol
+00000000                            38  00008034  5879 00FA60EC             34      ADDQ.W #$4, $00FA60EC
+Line 39 ERROR: Illegal symbol
+00000000                            39  0000803A  5EB9 00FA60EC             35      ADDQ.L #$7, $00FA60EC
+Line 40 ERROR: Illegal symbol
+00000000                            40  00008040                            36  
+Line 41 ERROR: Illegal symbol
+00000000                            41  00008040                            37  
+Line 42 ERROR: Illegal symbol
+00000000                            42  00008040  FFFF FFFF                 38      SIMHALT             ; halt simulator
+Line 43 ERROR: Illegal symbol
+00000000                            43  00008044                            39  
+Line 44 ERROR: Illegal symbol
+00000000                            44  00008044                            40  * Put variables and constants here
+Line 45 ERROR: Illegal symbol
+00000000                            45  00008044                            41  
+Line 46 ERROR: Illegal symbol
+00000000                            46  00008044                            42      END    START        ; last line of source
+00000000                            47  
+Line 48 ERROR: Invalid opcode
+00000000                            48  No errors detected
+Line 49 ERROR: Invalid opcode
+00000000                            49  No warnings generated
+00000000                            50  
+00000000                            51  
+Line 52 ERROR: Invalid opcode
+00000000                            52  SYMBOL TABLE INFORMATION
+Line 53 ERROR: Invalid opcode
+00000000                            53  Symbol-name         Value
+Line 54 ERROR: Illegal symbol
+00000000                            54  -------------------------
+Line 55 ERROR: Invalid opcode
+00000000                            55  START               8000
+Line 56 WARNING: END directive missing, starting address not set
 
-No errors detected
-No warnings generated
+51 errors detected
+1 warning generated
 
 
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-START               8000
