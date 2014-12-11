@@ -1566,7 +1566,6 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
-                    *JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -1583,6 +1582,7 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_NEG_OC
                     JSR     CHECK_MEM_SHIFT_OC
                     JSR     CHECK_REG_SHIFT_OC
+                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     OC_ERROR
@@ -2259,17 +2259,17 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     LSR.W   #6, D0
                     
                     ADDI.W  #1, D0
-                    MOVE.W  D0, D1
-                    LSL.W   #3, D1
-                    MOVE.W  D1, D2
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Source Mode
-                    MOVE.B  #7, D3
+                    MOVE.B  #EA_MODE_DATA, D3
                     LSL.B   #5, D3
                     OR.B    D3, D1
                     
                     * Source Register
-                    MOVE.B  #4, D3
+                    MOVE.B  #EA_DATA_REG, D3
                     OR.B    D3, D1
                     
                     * Destination Mode
@@ -2278,6 +2278,7 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     LSL.W   #2, D3
                     LSR.W   #8, D3
                     LSR.W   #5, D3
+                    LSL.W   #5, D3
                     OR.B    D3, D2
                     
                     * Destination Register
@@ -4214,6 +4215,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
