@@ -1,0 +1,77 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:56:33 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  3C43                      11      MOVEA.W D3, A6
+00008002  2C43                      12      MOVEA.L D3, A6
+00008004                            13  
+00008004                            14  
+00008004                            15  
+00008004  3C4E                      16      MOVEA.W A6, A6
+00008006  2C4E                      17      MOVEA.L A6, A6
+00008008                            18  
+00008008                            19  
+00008008                            20  
+00008008  3C57                      21      MOVEA.W (A7), A6
+0000800A  2C57                      22      MOVEA.L (A7), A6
+0000800C                            23  
+0000800C                            24  
+0000800C                            25  
+0000800C  3C5D                      26      MOVEA.W (A5)+, A6
+0000800E  2C5D                      27      MOVEA.L (A5)+, A6
+00008010                            28  
+00008010                            29  
+00008010                            30  
+00008010  3C61                      31      MOVEA.W -(A1), A6
+00008012  2C61                      32      MOVEA.L -(A1), A6
+00008014                            33  
+00008014                            34  
+00008014                            35  
+00008014  3C78 3B3C                 36      MOVEA.W $3B3C, A6
+00008018  2C78 3B3C                 37      MOVEA.L $3B3C, A6
+0000801C                            38  
+0000801C                            39  
+0000801C                            40  
+0000801C  3C79 005A0AB3             41      MOVEA.W $005A0AB3, A6
+00008022  2C79 005A0AB3             42      MOVEA.L $005A0AB3, A6
+00008028                            43  
+00008028                            44  
+00008028                            45  
+00008028  3C7C 0035                 46      MOVEA.W #$35, A6
+0000802C  2C7C 00000035             47      MOVEA.L #$35, A6
+00008032                            48  
+00008032                            49  
+00008032                            50  
+00008032  3C7C D21C                 51      MOVEA.W #$D21C, A6
+00008036  2C7C 0000D21C             52      MOVEA.L #$D21C, A6
+0000803C                            53  
+0000803C                            54  
+0000803C                            55  
+0000803C  2C7C 585E5141             56      MOVEA.L #$585E5141, A6
+00008042                            57  
+00008042                            58  
+00008042                            59  
+00008042  FFFF FFFF                 60      SIMHALT             ; halt simulator
+00008046                            61  
+00008046                            62  * Put variables and constants here
+00008046                            63  
+00008046                            64      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

@@ -1,0 +1,56 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:58:54 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  B703                      11      EOR.B D3, D3
+00008002  B743                      12      EOR.W D3, D3
+00008004  B783                      13      EOR.L D3, D3
+00008006                            14  
+00008006  B717                      15      EOR.B D3, (A7)
+00008008  B757                      16      EOR.W D3, (A7)
+0000800A  B797                      17      EOR.L D3, (A7)
+0000800C                            18  
+0000800C  B71D                      19      EOR.B D3, (A5)+
+0000800E  B75D                      20      EOR.W D3, (A5)+
+00008010  B79D                      21      EOR.L D3, (A5)+
+00008012                            22  
+00008012  B721                      23      EOR.B D3, -(A1)
+00008014  B761                      24      EOR.W D3, -(A1)
+00008016  B7A1                      25      EOR.L D3, -(A1)
+00008018                            26  
+00008018  B739 0000E2C2             27      EOR.B D3, $E2C2
+0000801E  B779 0000E2C2             28      EOR.W D3, $E2C2
+00008024  B7B9 0000E2C2             29      EOR.L D3, $E2C2
+0000802A                            30  
+0000802A  B739 004B5D1A             31      EOR.B D3, $004B5D1A
+00008030  B779 004B5D1A             32      EOR.W D3, $004B5D1A
+00008036  B7B9 004B5D1A             33      EOR.L D3, $004B5D1A
+0000803C                            34  
+0000803C                            35  
+0000803C                            36  
+0000803C                            37  
+0000803C                            38  
+0000803C  FFFF FFFF                 39      SIMHALT             ; halt simulator
+00008040                            40  
+00008040                            41  * Put variables and constants here
+00008040                            42  
+00008040                            43      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

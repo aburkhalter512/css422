@@ -1,0 +1,78 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 8:33:18 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  BCC3                      11      CMPA.W D3, A6
+00008002  BDC3                      12      CMPA.L D3, A6
+00008004                            13  
+00008004                            14  
+00008004                            15  
+00008004  BCCE                      16      CMPA.W A6, A6
+00008006  BDCE                      17      CMPA.L A6, A6
+00008008                            18  
+00008008                            19  
+00008008                            20  
+00008008  BCD7                      21      CMPA.W (A7), A6
+0000800A  BDD7                      22      CMPA.L (A7), A6
+0000800C                            23  
+0000800C                            24  
+0000800C                            25  
+0000800C  BCDD                      26      CMPA.W (A5)+, A6
+0000800E  BDDD                      27      CMPA.L (A5)+, A6
+00008010                            28  
+00008010                            29  
+00008010                            30  
+00008010  BCE1                      31      CMPA.W -(A1), A6
+00008012  BDE1                      32      CMPA.L -(A1), A6
+00008014                            33  
+00008014                            34  
+00008014                            35  
+00008014  BCF8 3D21                 36      CMPA.W $3D21, A6
+00008018  BDF8 3D21                 37      CMPA.L $3D21, A6
+0000801C                            38  
+0000801C                            39  
+0000801C                            40  
+0000801C  BCF9 00F53B0B             41      CMPA.W $00F53B0B, A6
+00008022  BDF9 00F53B0B             42      CMPA.L $00F53B0B, A6
+00008028                            43  
+00008028                            44  
+00008028                            45  
+00008028  BCFC 0020                 46      CMPA.W #$20, A6
+0000802C  BDFC 00000020             47      CMPA.L #$20, A6
+00008032                            48  
+00008032                            49  
+00008032                            50  
+00008032  BCFC 2706                 51      CMPA.W #$2706, A6
+00008036  BDFC 00002706             52      CMPA.L #$2706, A6
+0000803C                            53  
+0000803C                            54  
+0000803C                            55  
+0000803C  BDFC 694C16E2             56      CMPA.L #$694C16E2, A6
+00008042                            57  
+00008042                            58  
+00008042                            59  
+00008042                            60      
+00008042  FFFF FFFF                 61      SIMHALT             ; halt simulator
+00008046                            62  
+00008046                            63  * Put variables and constants here
+00008046                            64  
+00008046                            65      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000
