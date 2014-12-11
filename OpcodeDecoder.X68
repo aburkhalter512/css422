@@ -322,9 +322,8 @@ ITE		EQU		$FDFFFF
 *		MOVE.L  #SUBI_INSTR_2,(A6)+
 *		MOVE.L  #SUBI_INSTR_3,(A6)+	
 *		MOVE.W  #INVALID_INSTR,(A6)
-        *MOVE.L  #BTST_INSTR, (A6)
+        MOVE.L  #BTST_INSTR, (A6)
 
-        MOVE.W #$1AC3, (A6)
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
         MOVEA.L #START_ADDRESS, A2
@@ -1566,7 +1565,6 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
-                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -1583,6 +1581,7 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_NEG_OC
                     JSR     CHECK_MEM_SHIFT_OC
                     JSR     CHECK_REG_SHIFT_OC
+                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     OC_ERROR
@@ -2026,12 +2025,12 @@ CHECK_BTST_OC       MOVE.W  (A2), D0
                     CMP.W   #BTST_DYN_OC, D0
                     BEQ     PROCESS_BTST_DYN_OC
                     
-PROCESS_BTST_STA_OC MOVE.L  (A2), D0
+PROCESS_BTST_STA_OC MOVE.L  (SP)+, D0
                     CLR.L   D0
 
                     JSR     SET_BTST_SIZE
                     
-PROCESS_BTST_DYN_OC MOVE.L  (A2), D0
+PROCESS_BTST_DYN_OC MOVE.L  (SP)+, D0
                     CLR.L   D0
 
                     JSR     SET_BTST_SIZE
