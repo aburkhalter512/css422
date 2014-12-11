@@ -1,0 +1,20 @@
+ROR.W (A7)
+
+
+
+ROR.W (A5)+
+
+
+
+ROR.W -(A1)
+
+
+
+ROR.W $0774
+
+
+
+ROR.W $002ECF4D
+
+
+

@@ -1,0 +1,18 @@
+ROR.B #$1E, D3
+ROR.W #$1E, D3
+ROR.L #$1E, D3
+
+
+
+ROR.B #$4B62, D3
+ROR.W #$4B62, D3
+ROR.L #$4B62, D3
+
+
+
+ROR.B #$3A82E20A, D3
+ROR.W #$3A82E20A, D3
+ROR.L #$3A82E20A, D3
+
+
+

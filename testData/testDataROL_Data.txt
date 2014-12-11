@@ -1,0 +1,18 @@
+ROL.B #$53, D3
+ROL.W #$53, D3
+ROL.L #$53, D3
+
+
+
+ROL.B #$2F41, D3
+ROL.W #$2F41, D3
+ROL.L #$2F41, D3
+
+
+
+ROL.B #$EE6A4036, D3
+ROL.W #$EE6A4036, D3
+ROL.L #$EE6A4036, D3
+
+
+

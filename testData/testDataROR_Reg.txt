@@ -1,0 +1,6 @@
+ROR.B D3, D3
+ROR.W D3, D3
+ROR.L D3, D3
+
+
+
