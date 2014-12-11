@@ -8,10 +8,39 @@
 START:                  ; first instruction of program
 
 * Put program code here
-	SUBI.B #$77, D3
-	SUBI.W #$0000, D3
-	SUBI.L #$8980FFFF, D3
-	
+	DIVS.W D3, D3
+
+
+
+	DIVS.W (A7), D3
+
+
+
+	DIVS.W (A5)+, D3
+
+
+
+	DIVS.W -(A1), D3
+
+
+
+	DIVS.W $37A7, D3
+
+
+
+	DIVS.W $0089014F, D3
+
+
+
+	DIVS.W #$48, D3
+
+
+
+	DIVS.W #$632B, D3
+
+
+
+    
     SIMHALT             ; halt simulator
 
 * Put variables and constants here

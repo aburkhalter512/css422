@@ -8,10 +8,19 @@
 START:                  ; first instruction of program
 
 * Put program code here
-	SUBI.B #$77, D3
-	SUBI.W #$0000, D3
-	SUBI.L #$8980FFFF, D3
-	
+	LEA.L (A7), A6
+
+
+
+	LEA.L $2FBE, A6
+
+
+
+	LEA.L $00776319, A6
+
+
+
+
     SIMHALT             ; halt simulator
 
 * Put variables and constants here

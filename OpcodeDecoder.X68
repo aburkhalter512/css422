@@ -13,9 +13,7 @@ ASR_MS_INSTR        EQU     $E0D5               ; ASR.W (A5)
 BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
                                                 ; BRA.W 4 (equivalent since it's a word displacement)
 BEQ_INSTR           EQU     $6700031E
-BTST_INSTR_DYN      EQU     $0D3C006B           ; BTST.B D6, #%01101011
-BTST_INSTR_STA_1    EQU     $08390008
-BTST_INSTR_STA_2    EQU     $000081DF           ; BTST.B #8, $000081DF
+BTST_INSTR          EQU     $0D3C006B           ; BTST.B D6, #%01101011
 CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
 CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
 CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
@@ -276,8 +274,8 @@ TBL_MASK_SUBA       EQU     %11111111
 TBL_MASK_SUBI       EQU     %01111101
 
 * Iterator
-DPCT	            EQU		$FDFFFE
-ITE		            EQU		$FDFFFF
+DPCT	EQU		$FDFFFE
+ITE		EQU		$FDFFFF
 * =============================================================================
 * ================== Begin Program ============================================
 * =============================================================================
@@ -324,9 +322,9 @@ ITE		            EQU		$FDFFFF
 *		MOVE.L  #SUBI_INSTR_2,(A6)+
 *		MOVE.L  #SUBI_INSTR_3,(A6)+	
 *		MOVE.W  #INVALID_INSTR,(A6)
-*       MOVE.L  #BTST_INSTR_STA_1, (A6)+
-*       MOVE.L  #BTST_INSTR_STA_2, (A6)
+        *MOVE.L  #BTST_INSTR, (A6)
 
+        *MOVE.W #$1AC3, (A6)
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
         *MOVEA.L #START_ADDRESS, A2
@@ -1568,6 +1566,7 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
+                    *JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -1584,7 +1583,6 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_NEG_OC
                     JSR     CHECK_MEM_SHIFT_OC
                     JSR     CHECK_REG_SHIFT_OC
-                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MOVEA_OC
                     JSR     CHECK_MOVE_OC
                     BRA     OC_ERROR
@@ -2028,46 +2026,12 @@ CHECK_BTST_OC       MOVE.W  (A2), D0
                     CMP.W   #BTST_DYN_OC, D0
                     BEQ     PROCESS_BTST_DYN_OC
                     
-                    RTS
-                    
-PROCESS_BTST_STA_OC MOVE.L  (SP)+, D0
+PROCESS_BTST_STA_OC MOVE.L  (A2), D0
                     CLR.L   D0
 
                     JSR     SET_BTST_SIZE
-
-                    * Destination Mode
-                    LSL.B   #5, D3
-                    OR.B    D3, D2
                     
-                    * Destination Register
-                    MOVE.W  (A2), D3
-                    LSL.W   #8, D3
-                    LSL.W   #5, D3
-                    LSR.W   #8, D3
-                    LSR.W   #5, D3
-                    OR.B    D3, D2
-
-                    * Size
-                    MOVE.B  D0, D1
-                    LSL.B   #3, D1
-                    OR.B    D1, D2
-                    
-                    * Source Mode
-                    MOVE.B  #EA_MODE_DATA, D3
-                    LSL.B   #5, D3
-                    OR.B    D3, D1
-                    
-                    * Source Register
-                    MOVE.B  #EA_DATA_REG, D3
-                    OR.B    D3, D1
-                    
-                    MOVE.B  #TBL_MASK_DATA, D3
-                    MOVE.B  #TBL_MASK_BTST_STA, D4
-                    MOVE.B  #BTST_OC_CODE, D5
-                    
-                    BRA     OC_TWO_EA
-                    
-PROCESS_BTST_DYN_OC MOVE.L  (SP)+, D0
+PROCESS_BTST_DYN_OC MOVE.L  (A2), D0
                     CLR.L   D0
 
                     JSR     SET_BTST_SIZE
@@ -2104,6 +2068,7 @@ PROCESS_BTST_DYN_OC MOVE.L  (SP)+, D0
                     MOVE.B  #BTST_OC_CODE, D5
                     
                     BRA     OC_TWO_EA
+                    
 
 SET_BTST_SIZE       * Destination Mode
                     MOVE.W  (A2), D3
@@ -4249,8 +4214,6 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
-
-
 
 
 
