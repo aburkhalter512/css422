@@ -2026,12 +2026,46 @@ CHECK_BTST_OC       MOVE.W  (A2), D0
                     CMP.W   #BTST_DYN_OC, D0
                     BEQ     PROCESS_BTST_DYN_OC
                     
-PROCESS_BTST_STA_OC MOVE.L  (A2), D0
+                    RTS
+                    
+PROCESS_BTST_STA_OC MOVE.L  (SP)+, D0
                     CLR.L   D0
 
                     JSR     SET_BTST_SIZE
+
+                    * Destination Mode
+                    LSL.B   #5, D3
+                    OR.B    D3, D2
                     
-PROCESS_BTST_DYN_OC MOVE.L  (A2), D0
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+
+                    * Size
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    OR.B    D1, D2
+                    
+                    * Source Mode
+                    MOVE.B  #EA_MODE_DATA, D3
+                    LSL.B   #5, D3
+                    OR.B    D3, D1
+                    
+                    * Source Register
+                    MOVE.B  #EA_DATA_REG, D3
+                    OR.B    D3, D1
+                    
+                    MOVE.B  #TBL_MASK_DATA, D3
+                    MOVE.B  #TBL_MASK_BTST_STA, D4
+                    MOVE.B  #BTST_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
+                    
+PROCESS_BTST_DYN_OC MOVE.L  (SP)+, D0
                     CLR.L   D0
 
                     JSR     SET_BTST_SIZE
@@ -2068,7 +2102,6 @@ PROCESS_BTST_DYN_OC MOVE.L  (A2), D0
                     MOVE.B  #BTST_OC_CODE, D5
                     
                     BRA     OC_TWO_EA
-                    
 
 SET_BTST_SIZE       * Destination Mode
                     MOVE.W  (A2), D3
