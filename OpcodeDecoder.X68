@@ -1737,7 +1737,7 @@ PROCESS_ADD_OC_DST  * Size
                     LSL.W   #8, D3
                     LSL.W   #5, D3
                     LSR.W   #8, D3
-                    LSR.W   #8, D3
+                    LSR.W   #5, D3
                     OR.B    D3, D2
                     
                     MOVE.B  #TBL_MASK_DATA_REG, D3
@@ -4214,6 +4214,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
