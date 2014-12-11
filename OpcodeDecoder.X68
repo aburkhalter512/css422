@@ -13,9 +13,7 @@ ASR_MS_INSTR        EQU     $E0D5               ; ASR.W (A5)
 BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
                                                 ; BRA.W 4 (equivalent since it's a word displacement)
 BEQ_INSTR           EQU     $6700031E
-BTST_INSTR_DYN      EQU     $0D3C006B           ; BTST.B D6, #%01101011
-BTST_INSTR_STA_1    EQU     $08390008
-BTST_INSTR_STA_2    EQU     $000081DF           ; BTST.B #8, $000081DF
+BTST_INSTR          EQU     $0D3C006B           ; BTST.B D6, #%01101011
 CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
 CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
 CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
@@ -283,47 +281,47 @@ ITE		EQU		$FDFFFF
 * =============================================================================
 		MOVEA.L #START_ADDRESS, A6
 
-*		MOVE.W	#$1619,(A6)+
-*		MOVE.W	#$1621,(A6)+
-*		MOVE.W	#$0105,(A6)+
-*		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
-*		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
+		MOVE.W	#$1619,(A6)+
+		MOVE.W	#$1621,(A6)+
+		MOVE.W	#$0105,(A6)+
+		MOVE.L	#ADD_INSTR,(A6)+	* ADD.B $5000,D1
+		MOVE.L	#ADD_INSTR_2,(A6)+	* ADD.B D1,$5000
 *		MOVE.W	#ADDQ_INSTR,(A6)+	* ADDQ.W #$0007,D5
-*		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
-*		MOVE.W	#ASL_INSTR,(A6)+	* ASL.B D4,D2
-*		MOVE.W	#ASL_MS_INSTR,(A6)+	* ASL.W (A5)
-*		MOVE.W	#ASR_INSTR,(A6)+	* ASR.W D6,D0
-*		MOVE.W	#ASR_MS_INSTR,(A6)+	* ASR.W (A5)
-*		MOVE.L	#BEQ_INSTR,(A6)+
-*		MOVE.L	#BRA_INSTR,(A6)+
-*		MOVE.L	#CMPI_INSTR,(A6)+	* CMPI.W #$0005,D7
-*		MOVE.W	#DIVS_INSTR,(A6)+	* DIVS.W D0,D4
-*		MOVE.L	#EOR_INSTR,(A6)+	* EOR.W D2,$6000
-*		MOVE.L	#EORI_INSTR,(A6)+	* EORI.W #$0007,D1
-*		MOVE.W	#JSR_INSTR_OC,(A6)+	* JSR $0000101A
-*		MOVE.L	#JSR_INSTR_DATA,(A6)+
-*		MOVE.L  #LEA_INSTR,(A6)+	* LEA $5000,A5
-*		MOVE.W  #LSL_ID_INSTR,(A6)+ * LSL.L #$00000008,D7
-*		MOVE.W	#LSL_INSTR,(A6)+	* LSL.W D5,D1
-*		MOVE.W  #LSL_MS_INSTR,(A6)+ * LSL.W (A5)
-*		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
-*		MOVE.L  #MOVEA_INSTR,(A6)+	* MOVEA.W #$4000,A2
-*		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
-*		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $00008000
-*		MOVE.L	#NEG_INSTR_DATA,(A6)+
-*		MOVE.W  #NOT_INSTR, (A6)+	* NOT.L D5
-*		MOVE.L  #ORI_INSTR,(A6)+	* ORI.B #$0036,D3
-*		MOVE.W  #ROL_INSTR,(A6)+	* ROL.B D2,D5
-*		MOVE.W  #ROL_MS_INSTR,(A6)+	* ROL.W (A5)
-*		MOVE.W  #ROR_ID_INSTR,(A6)+	* ROR.W #0004,D1
-*		MOVE.W  #ROR_INSTR,(A6)+	* ROR.L D7,D0
-*		MOVE.W  #ROR_MS_INSTR,(A6)+	* ROR.W (A5)
-*		MOVE.W  #RTS_INSTR,(A6)+
-*		MOVE.L  #SUBA_INSTR,(A6)+	* SUBA.W $A000,A4
-*		MOVE.W  #SUBI_INSTR,(A6)+	* SUBI.L #$00000309,$09381764
-*		MOVE.L  #SUBI_INSTR_2,(A6)+
-*		MOVE.L  #SUBI_INSTR_3,(A6)+	
-*		MOVE.W  #INVALID_INSTR,(A6)
+		MOVE.L	#AND_INSTR,(A6)+	* AND.W #$0055,D3
+		MOVE.W	#ASL_INSTR,(A6)+	* ASL.B D4,D2
+		MOVE.W	#ASL_MS_INSTR,(A6)+	* ASL.W (A5)
+		MOVE.W	#ASR_INSTR,(A6)+	* ASR.W D6,D0
+		MOVE.W	#ASR_MS_INSTR,(A6)+	* ASR.W (A5)
+		MOVE.L	#BEQ_INSTR,(A6)+
+		MOVE.L	#BRA_INSTR,(A6)+
+		MOVE.L	#BTST_INSTR,(A6)+	* BTST.B D6,#$006B
+		MOVE.L	#CMPI_INSTR,(A6)+	* CMPI.W #$0005,D7
+		MOVE.W	#DIVS_INSTR,(A6)+	* DIVS.W D0,D4
+		MOVE.L	#EOR_INSTR,(A6)+	* EOR.W D2,$6000
+		MOVE.L	#EORI_INSTR,(A6)+	* EORI.W #$0007,D1
+		MOVE.W	#JSR_INSTR_OC,(A6)+	* JSR $0000101A
+		MOVE.L	#JSR_INSTR_DATA,(A6)+
+		MOVE.L  #LEA_INSTR,(A6)+	* LEA $5000,A5
+		MOVE.W  #LSL_ID_INSTR,(A6)+ * LSL.L #$00000008,D7
+		MOVE.W	#LSL_INSTR,(A6)+	* LSL.W D5,D1
+		MOVE.W  #LSL_MS_INSTR,(A6)+ * LSL.W (A5)
+		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
+		MOVE.L  #MOVEA_INSTR,(A6)+	* MOVEA.W #$4000,A2
+		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
+		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $00008000
+		MOVE.L	#NEG_INSTR_DATA,(A6)+
+		MOVE.W  #NOT_INSTR, (A6)+	* NOT.L D5
+		MOVE.L  #ORI_INSTR,(A6)+	* ORI.B #$0036,D3
+		MOVE.W  #ROL_INSTR,(A6)+	* ROL.B D2,D5
+		MOVE.W  #ROL_MS_INSTR,(A6)+	* ROL.W (A5)
+		MOVE.W  #ROR_ID_INSTR,(A6)+	* ROR.W #0004,D1
+		MOVE.W  #ROR_INSTR,(A6)+	* ROR.L D7,D0
+		MOVE.W  #ROR_MS_INSTR,(A6)+	* ROR.W (A5)
+		MOVE.W  #RTS_INSTR,(A6)+
+		MOVE.L  #SUBA_INSTR,(A6)+	* SUBA.W $A000,A4
+		MOVE.W  #SUBI_INSTR,(A6)+	* SUBI.L #$00000309,$09381764
+		MOVE.L  #SUBI_INSTR_2,(A6)+
+		MOVE.L  #SUBI_INSTR_3,(A6)+	
        *MOVE.L  #BTST_INSTR_STA_1, (A6)+
        *MOVE.L  #BTST_INSTR_STA_2, (A6)
        
@@ -343,7 +341,7 @@ ITE		EQU		$FDFFFF
 *==============================
 *----------I/O MODULE----------
 *==============================
-		MOVE.B	#$0,(ITE)
+IOSTART	MOVE.B	#$0,(ITE)
 		MOVE.B	#$0,(DPCT)
 		JSR		DPTITLE
 		MOVE.W	#$FF00,D1
@@ -356,11 +354,28 @@ IOLOOP	CMP.B	#$1D,DPCT
 		ADD.L	D4,A2
 		ADD.L	D4,A2
 		CMPA.L	A3,A2
-		BGT		IOEND
+		BGT		IOEDLP
 		MOVE.L	#$0,SP
 		CLR		D5
 		JSR		PROCESS_OC
 		JMP		SD					* Place Break Here
+IOEDLP	LEA		SCONT,A1
+		MOVE.B	#14,D0
+		TRAP	#15
+		MOVE.B	#0,D1
+		MOVE.B	#12,D0
+		TRAP	#15
+		MOVE.B	#5,D0
+		TRAP	#15
+		CMP.B	#$D,D1
+		BNE		IOEND
+		MOVE.W	#$FF00,D1
+		MOVE.B	#11,D0
+		TRAP	#15
+		MOVE.B	#1,D1
+		MOVE.B	#12,D0
+		TRAP	#15
+		JMP		IOSTART
 IOEND	MOVE.B	#9,D0
 		TRAP	#15
 
@@ -486,6 +501,7 @@ SD_ERR	MOVE.B	#$31,(A6)+		* Error Handler
 *-----STRING STACK DECODER-----
 * Prints strings using String Stack
 SSD		MOVE.L	#$0,SP
+		CLR.L	D7
 		CMPA.L	A6,A5
 		BGT		IOLOOP
 		MOVE.L	#$00000000,D7
@@ -854,7 +870,7 @@ ERRIN	LEA		SINVAL,A1
 		CLR		D1
 		CLR		D5
 		CLR.L	D6
-		CLR		D7
+		CLR.L	D7
 		MOVE.L	#$00FFFFFC,SP	* Leaving Space for RTS
 DPTITLE	LEA		TITLE,A1
 		MOVE.B	#14,D0
@@ -862,6 +878,7 @@ DPTITLE	LEA		TITLE,A1
 		LEA		SSTADDR,A1
 		MOVE.B	#14,D0
 		TRAP	#15
+		CLR.L	D6
 		JSR		STARTIN
 		LEA		SEDADDR,A1
 		MOVE.B	#14,D0
@@ -4312,10 +4329,11 @@ TITLE	DC.B	'                  ::                 :%@@%:                 .:      
 		DC.B	'    =##     .:.   *@* ...+%@@@@@@@*+*%####%*+*@@@@@@@@+... +@*   .:.     ##=    ',CR,LF
 		DC.B	'     =*           .+##*     :*#%%#%%*%%@@%@*%%#%%#*:     *##+.           *=     ',CR,LF
 		DC.B	'                                      .@@.                                      ',CR,LF
-		DC.B	'  68K Disassembler  presented by Adam Burkhalter, Jongwook Kim, & Terry Rogers  ',CR,LF,0
+		DC.B	'| 68K Disassembler  presented by Adam Burkhalter, Jongwook Kim, & Terry Rogers |',CR,LF,0
 SSTADDR	DC.B	'Starting Address (Even#, $00004000 ~ $00FCFFFE) >> ',0
 SEDADDR	DC.B	'Ending Address   (Starting Address ~ $00FCFFFE) >> ',0
 SINVAL	DC.B	'Invalid Input',0
+SCONT	DC.B	'Press Enter to disassemble again, or Press any other key to quit.',0
 ;=================== Test Data ================================================
 TEST_MOVE_0         DC.W    %0001001000000111           ;MOVE.B D7, D1	
 TEST_MOVE_1         DC.W    %0011001010001110           ;MOVE.W A6, (A1)
