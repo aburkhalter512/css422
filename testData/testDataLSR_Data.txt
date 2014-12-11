@@ -1,0 +1,18 @@
+LSR.B #$8B, D3
+LSR.W #$8B, D3
+LSR.L #$8B, D3
+
+
+
+LSR.B #$9CB4, D3
+LSR.W #$9CB4, D3
+LSR.L #$9CB4, D3
+
+
+
+LSR.B #$673F69A8, D3
+LSR.W #$673F69A8, D3
+LSR.L #$673F69A8, D3
+
+
+

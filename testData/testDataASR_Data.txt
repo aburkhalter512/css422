@@ -1,0 +1,18 @@
+ASR.B #$9C, D3
+ASR.W #$9C, D3
+ASR.L #$9C, D3
+
+
+
+ASR.B #$7D72, D3
+ASR.W #$7D72, D3
+ASR.L #$7D72, D3
+
+
+
+ASR.B #$A378BC37, D3
+ASR.W #$A378BC37, D3
+ASR.L #$A378BC37, D3
+
+
+
