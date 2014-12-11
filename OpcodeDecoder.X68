@@ -324,20 +324,20 @@ ITE		            EQU		$FDFFFF
 *		MOVE.L  #SUBI_INSTR_2,(A6)+
 *		MOVE.L  #SUBI_INSTR_3,(A6)+	
 *		MOVE.W  #INVALID_INSTR,(A6)
-       MOVE.L  #BTST_INSTR_STA_1, (A6)+
-       MOVE.L  #BTST_INSTR_STA_2, (A6)
+*       MOVE.L  #BTST_INSTR_STA_1, (A6)+
+*       MOVE.L  #BTST_INSTR_STA_2, (A6)
 
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
-        MOVEA.L #START_ADDRESS, A2
-        MOVEA.L A2, A3
+        *MOVEA.L #START_ADDRESS, A2
+        *MOVEA.L A2, A3
                                         
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
 		* DO NOT remove.
-		JSR		PROCESS_OC
-		MOVE.B  #9, D0
-		TRAP    #15
+		*JSR		PROCESS_OC
+		*MOVE.B  #9, D0
+		*TRAP    #15
 *==============================
 *----------I/O MODULE----------
 *==============================
@@ -4249,6 +4249,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
