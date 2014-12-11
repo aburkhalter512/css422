@@ -13,6 +13,7 @@ ASR_MS_INSTR        EQU     $E0D5               ; ASR.W (A5)
 BRA_INSTR           EQU     $60000004           ; BRA 4 (Branch forward 4 bytes)
                                                 ; BRA.W 4 (equivalent since it's a word displacement)
 BEQ_INSTR           EQU     $6700031E
+BTST_INSTR          EQU     $0D3C006B           ; BTST.B D6, #%01101011
 CMP_INSTR           EQU     $BC43               ; CMP.W D3, D6
 CMPA_INSTR          EQU     $BCC3               ; CMP.W D3, A6
 CMPI_INSTR          EQU     $0C470005           ; CMPI.W #5, D7
@@ -72,6 +73,8 @@ ADD_OC              EQU     $D000
 ADDQ_OC             EQU     $5000
 AND_OC              EQU     $C000
 Bcc_OC              EQU     $6000
+BTST_DYN_OC         EQU     $0100
+BTST_STA_OC         EQU     $0800
 CMP_EOR_OC          EQU     $B000
 CMPI_OC             EQU     $0C00
 DIVS_OC             EQU     $81C0
@@ -96,6 +99,8 @@ ADD_OC_MASK         EQU     $F000
 ADDQ_OC_MASK        EQU     $F100
 AND_OC_MASK         EQU     $F000
 Bcc_OC_MASK         EQU     $F000
+BTST_DYN_OC_MASK    EQU     $F1C0
+BTST_STA_OC_MASK    EQU     $FFC0
 CMP_EOR_OC_MASK     EQU     $F000
 CMPI_OC_MASK        EQU     $FF00
 DIVS_OC_MASK        EQU     $F1C0
@@ -103,7 +108,7 @@ EORI_OC_MASK        EQU     $FF00
 JSR_OC_MASK         EQU     $FF80
 LEA_OC_MASK         EQU     $F1C0
 MOVE_OC_MASK        EQU     $C000
-MOVEA_OC_MASK       EQU     $C140
+MOVEA_OC_MASK       EQU     $C1C0
 MULS_OC_MASK        EQU     $F1C0
 NEG_OC_MASK         EQU     $FF00
 NOT_OC_MASK         EQU     $FF00
@@ -220,6 +225,10 @@ TBL_MASK_ADDQ       EQU     %01111111
 TBL_MASK_AND_SRC    EQU     %11111101
 TBL_MASK_AND_DST    EQU     %01111100
 
+* BTST Masks
+TBL_MASK_BTST_DYN   EQU     %11111101
+TBL_MASK_BTST_STA   EQU     %01111101
+
 * CMP Masks
 TBL_MASK_CMP        EQU     %11111111
 TBL_MASK_CMPA       EQU     %11111111
@@ -233,7 +242,7 @@ TBL_MASK_EOR        EQU     %01111101
 TBL_MASK_EORI       EQU     %01111101
 
 * JSR Mask
-TBL_MASK_JSR        EQU     %01100100 ;Allow only control addressing modes
+TBL_MASK_JSR        EQU     %01100100
 
 * LEA Mask
 TBL_MASK_LEA        EQU     %01100100
@@ -242,8 +251,8 @@ TBL_MASK_LEA        EQU     %01100100
 TBL_MASK_MEM_SHIFT  EQU     %01111100
 
 * MOVE Masks
-TBL_MASK_MOVE_SRC   EQU     %11111111 ;Allow all
-TBL_MASK_MOVE_DST   EQU     %01111101 ;Allow all but raw data and address registers
+TBL_MASK_MOVE_SRC   EQU     %11111111
+TBL_MASK_MOVE_DST   EQU     %01111101
 TBL_MASK_MOVEA      EQU     %11111111
 
 * MULS Mask
@@ -295,7 +304,7 @@ ITE		EQU		$FDFFFF
 *		MOVE.W  #LSL_ID_INSTR,(A6)+ * LSL.L #$00000008,D7
 *		MOVE.W	#LSL_INSTR,(A6)+	* LSL.W D5,D1
 *		MOVE.W  #LSL_MS_INSTR,(A6)+ * LSL.W (A5)
-		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
+*		MOVE.W  #MOVE_INSTR,(A6)+	* MOVE.B D0,D1
 *		MOVE.L  #MOVEA_INSTR,(A6)+	* MOVEA.W #$4000,A2
 *		MOVE.L  #MULS_INSTR,(A6)+	* MULS.W #$0038,D3
 *		MOVE.W	#NEG_INSTR,(A6)+	* NEG.W $00008000
@@ -313,18 +322,20 @@ ITE		EQU		$FDFFFF
 *		MOVE.L  #SUBI_INSTR_2,(A6)+
 *		MOVE.L  #SUBI_INSTR_3,(A6)+	
 *		MOVE.W  #INVALID_INSTR,(A6)
+        *MOVE.L  #BTST_INSTR, (A6)
 
+        MOVE.W #$1AC3, (A6)
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
-        *MOVEA.L #START_ADDRESS, A2
-        *MOVEA.L A2, A3
+        MOVEA.L #START_ADDRESS, A2
+        MOVEA.L A2, A3
                                         
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
 		* DO NOT remove.
-		*JSR		PROCESS_OC
-		*MOVE.B  #9, D0
-		*TRAP    #15
+		JSR		PROCESS_OC
+		MOVE.B  #9, D0
+		TRAP    #15
 *==============================
 *----------I/O MODULE----------
 *==============================
@@ -1555,6 +1566,7 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
+                    JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -1999,6 +2011,80 @@ CHECK_Bcc_OC        MOVE.W  (A2), D0
                     AND.W   #Bcc_OC_MASK, D0
                     CMP.W   #Bcc_OC, D0
                     BEQ     PROCESS_Bcc_OC
+                    RTS
+
+*------------------------------------------------------------------------------
+* BTST
+*------------------------------------------------------------------------------
+CHECK_BTST_OC       MOVE.W  (A2), D0
+                    AND.W   #BTST_STA_OC_MASK, D0
+                    CMP.W   #BTST_STA_OC, D0
+                    BEQ     PROCESS_BTST_STA_OC
+
+                    MOVE.W  (A2), D0
+                    AND.W   #BTST_DYN_OC_MASK, D0
+                    CMP.W   #BTST_DYN_OC, D0
+                    BEQ     PROCESS_BTST_DYN_OC
+                    
+PROCESS_BTST_STA_OC MOVE.L  (A2), D0
+                    CLR.L   D0
+
+                    JSR     SET_BTST_SIZE
+                    
+PROCESS_BTST_DYN_OC MOVE.L  (A2), D0
+                    CLR.L   D0
+
+                    JSR     SET_BTST_SIZE
+
+                    * Destination Mode
+                    LSL.B   #5, D3
+                    OR.B    D3, D2
+                    
+                    * Destination Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #5, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D2
+
+                    * Size
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    OR.B    D1, D2
+                    
+                    * Source Mode
+                    * Not needed since the source mode is 000.
+                    
+                    * Source Register
+                    MOVE.W  (A2), D3
+                    LSL.W   #4, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    OR.B    D3, D1
+                    
+                    MOVE.B  #TBL_MASK_DATA_REG, D3
+                    MOVE.B  #TBL_MASK_BTST_DYN, D4
+                    MOVE.B  #BTST_OC_CODE, D5
+                    
+                    BRA     OC_TWO_EA
+                    
+
+SET_BTST_SIZE       * Destination Mode
+                    MOVE.W  (A2), D3
+                    LSL.W   #8, D3
+                    LSL.W   #2, D3
+                    LSR.W   #8, D3
+                    LSR.W   #5, D3
+                    
+                    CMPI.B  #EA_MODE_DATA_REG, D3
+                    BEQ     SET_BTST_SIZE_LONG
+                    BRA     SET_BTST_SIZE_BYTE
+
+SET_BTST_SIZE_BYTE  MOVE.B  #OC_BYTE_SIZE, D0
+                    RTS
+
+SET_BTST_SIZE_LONG  MOVE.B  #OC_LONG_SIZE, D0
                     RTS
 
 *------------------------------------------------------------------------------
@@ -4128,6 +4214,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
