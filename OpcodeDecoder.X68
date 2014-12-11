@@ -2259,17 +2259,17 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     LSR.W   #6, D0
                     
                     ADDI.W  #1, D0
-                    MOVE.W  D0, D1
-                    LSL.W   #3, D1
-                    MOVE.W  D1, D2
+                    MOVE.B  D0, D1
+                    LSL.B   #3, D1
+                    MOVE.B  D1, D2
                     
                     * Source Mode
-                    MOVE.B  #7, D3
+                    MOVE.B  #EA_MODE_DATA, D3
                     LSL.B   #5, D3
                     OR.B    D3, D1
                     
                     * Source Register
-                    MOVE.B  #4, D3
+                    MOVE.B  #EA_DATA_REG, D3
                     OR.B    D3, D1
                     
                     * Destination Mode
@@ -2278,6 +2278,7 @@ PROCESS_CMPI_OC     MOVE.L  (SP)+, D0
                     LSL.W   #2, D3
                     LSR.W   #8, D3
                     LSR.W   #5, D3
+                    LSL.W   #5, D3
                     OR.B    D3, D2
                     
                     * Destination Register
