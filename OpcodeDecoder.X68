@@ -1852,7 +1852,7 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     MOVE.L  D7, D2                  ; Put the source data in the appropriate register.
                     MOVE.W  (SP)+, D7               ; Get the true instruction from the stack.
                     
-                    JSR     OC_XDFS                 ; Get the fake data from the stack.
+                    *JSR     OC_XDFS                 ; Get the fake data from the stack.
                     
                     MOVE.L  (SP)+, A2               ; Restore the original instruction address.
                     MOVE.B  (SP)+, D4               ; Get the opcode size from the stack.
@@ -4214,6 +4214,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
