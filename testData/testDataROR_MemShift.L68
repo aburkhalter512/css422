@@ -1,0 +1,50 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 5:10:45 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000                            11  
+00008000  E6D7                      12      ROR.W (A7)
+00008002                            13  
+00008002                            14  
+00008002                            15  
+00008002  E6DD                      16      ROR.W (A5)+
+00008004                            17  
+00008004                            18  
+00008004                            19  
+00008004  E6E1                      20      ROR.W -(A1)
+00008006                            21  
+00008006                            22  
+00008006                            23  
+00008006  E6F8 0774                 24      ROR.W $0774
+0000800A                            25  
+0000800A                            26  
+0000800A                            27  
+0000800A  E6F9 002ECF4D             28      ROR.W $002ECF4D
+00008010                            29  
+00008010                            30  
+00008010                            31  
+00008010                            32  
+00008010  FFFF FFFF                 33      SIMHALT             ; halt simulator
+00008014                            34  
+00008014                            35  * Put variables and constants here
+00008014                            36  
+00008014                            37      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

@@ -35,27 +35,26 @@ START:                  ; first instruction of program
 
 
 
-	MOVE.B A6, D3
+
 	MOVE.W A6, D3
 	MOVE.L A6, D3
 
-	MOVE.B A6, (A7)
+
 	MOVE.W A6, (A7)
 	MOVE.L A6, (A7)
 
-	MOVE.B A6, (A5)+
+
 	MOVE.W A6, (A5)+
 	MOVE.L A6, (A5)+
 
-	MOVE.B A6, -(A1)
 	MOVE.W A6, -(A1)
 	MOVE.L A6, -(A1)
 
-	MOVE.B A6, $0D9E
+
 	MOVE.W A6, $0D9E
 	MOVE.L A6, $0D9E
 
-	MOVE.B A6, $00AE80F2
+
 	MOVE.W A6, $00AE80F2
 	MOVE.L A6, $00AE80F2
 
@@ -217,54 +216,50 @@ START:                  ; first instruction of program
 
 
 
-	MOVE.B #$0420, D3
+
 	MOVE.W #$0420, D3
 	MOVE.L #$0420, D3
 
-	MOVE.B #$0420, (A7)
+
 	MOVE.W #$0420, (A7)
 	MOVE.L #$0420, (A7)
 
-	MOVE.B #$0420, (A5)+
+
 	MOVE.W #$0420, (A5)+
 	MOVE.L #$0420, (A5)+
 
-	MOVE.B #$0420, -(A1)
+
 	MOVE.W #$0420, -(A1)
 	MOVE.L #$0420, -(A1)
 
-	MOVE.B #$0420, $0D9E
+
 	MOVE.W #$0420, $0D9E
 	MOVE.L #$0420, $0D9E
 
-	MOVE.B #$0420, $00AE80F2
+
 	MOVE.W #$0420, $00AE80F2
 	MOVE.L #$0420, $00AE80F2
 
 
 
-	MOVE.B #$82237ED4, D3
-	MOVE.W #$82237ED4, D3
+
+
 	MOVE.L #$82237ED4, D3
 
-	MOVE.B #$82237ED4, (A7)
-	MOVE.W #$82237ED4, (A7)
+
+
 	MOVE.L #$82237ED4, (A7)
 
-	MOVE.B #$82237ED4, (A5)+
-	MOVE.W #$82237ED4, (A5)+
+
 	MOVE.L #$82237ED4, (A5)+
 
-	MOVE.B #$82237ED4, -(A1)
-	MOVE.W #$82237ED4, -(A1)
+
 	MOVE.L #$82237ED4, -(A1)
 
-	MOVE.B #$82237ED4, $0D9E
-	MOVE.W #$82237ED4, $0D9E
+
 	MOVE.L #$82237ED4, $0D9E
 
-	MOVE.B #$82237ED4, $00AE80F2
-	MOVE.W #$82237ED4, $00AE80F2
+
 	MOVE.L #$82237ED4, $00AE80F2
 
 
@@ -276,6 +271,7 @@ START:                  ; first instruction of program
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 *~Font name~Courier New~
 *~Font size~10~
