@@ -1,0 +1,35 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:05:05 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  E723                      11      ASL.B D3, D3
+00008002  E763                      12      ASL.W D3, D3
+00008004  E7A3                      13      ASL.L D3, D3
+00008006                            14  
+00008006                            15  
+00008006                            16  
+00008006                            17  
+00008006  FFFF FFFF                 18      SIMHALT             ; halt simulator
+0000800A                            19  
+0000800A                            20  * Put variables and constants here
+0000800A                            21  
+0000800A                            22      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

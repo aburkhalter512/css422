@@ -1,0 +1,65 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:07:06 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  4603                      11      NOT.B D3
+00008002  4643                      12      NOT.W D3
+00008004  4683                      13      NOT.L D3
+00008006                            14  
+00008006                            15  
+00008006                            16  
+00008006  4617                      17      NOT.B (A7)
+00008008  4657                      18      NOT.W (A7)
+0000800A  4697                      19      NOT.L (A7)
+0000800C                            20  
+0000800C                            21  
+0000800C                            22  
+0000800C  461D                      23      NOT.B (A5)+
+0000800E  465D                      24      NOT.W (A5)+
+00008010  469D                      25      NOT.L (A5)+
+00008012                            26  
+00008012                            27  
+00008012                            28  
+00008012  4621                      29      NOT.B -(A1)
+00008014  4661                      30      NOT.W -(A1)
+00008016  46A1                      31      NOT.L -(A1)
+00008018                            32  
+00008018                            33  
+00008018                            34  
+00008018  4638 1EC1                 35      NOT.B $1EC1
+0000801C  4678 1EC1                 36      NOT.W $1EC1
+00008020  46B8 1EC1                 37      NOT.L $1EC1
+00008024                            38  
+00008024                            39  
+00008024                            40  
+00008024  4639 00E2FD77             41      NOT.B $00E2FD77
+0000802A  4679 00E2FD77             42      NOT.W $00E2FD77
+00008030  46B9 00E2FD77             43      NOT.L $00E2FD77
+00008036                            44  
+00008036                            45  
+00008036                            46  
+00008036                            47  
+00008036  FFFF FFFF                 48      SIMHALT             ; halt simulator
+0000803A                            49  
+0000803A                            50  * Put variables and constants here
+0000803A                            51  
+0000803A                            52      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

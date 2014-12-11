@@ -1,0 +1,51 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:54:11 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  9717                      11      SUB.B D3, (A7)
+00008002  9757                      12      SUB.W D3, (A7)
+00008004  9797                      13      SUB.L D3, (A7)
+00008006                            14  
+00008006  971D                      15      SUB.B D3, (A5)+
+00008008  975D                      16      SUB.W D3, (A5)+
+0000800A  979D                      17      SUB.L D3, (A5)+
+0000800C                            18  
+0000800C  9721                      19      SUB.B D3, -(A1)
+0000800E  9761                      20      SUB.W D3, -(A1)
+00008010  97A1                      21      SUB.L D3, -(A1)
+00008012                            22  
+00008012  9738 1DF4                 23      SUB.B D3, $1DF4
+00008016  9778 1DF4                 24      SUB.W D3, $1DF4
+0000801A  97B8 1DF4                 25      SUB.L D3, $1DF4
+0000801E                            26  
+0000801E  9739 00E1DFEB             27      SUB.B D3, $00E1DFEB
+00008024  9779 00E1DFEB             28      SUB.W D3, $00E1DFEB
+0000802A  97B9 00E1DFEB             29      SUB.L D3, $00E1DFEB
+00008030                            30  
+00008030                            31  
+00008030                            32  
+00008030                            33  
+00008030  FFFF FFFF                 34      SIMHALT             ; halt simulator
+00008034                            35  
+00008034                            36  * Put variables and constants here
+00008034                            37  
+00008034                            38      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

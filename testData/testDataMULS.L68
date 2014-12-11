@@ -1,0 +1,62 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:55:56 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  C7C3                      11      MULS.W D3, D3
+00008002                            12  
+00008002                            13  
+00008002                            14  
+00008002  C7D7                      15      MULS.W (A7), D3
+00008004                            16  
+00008004                            17  
+00008004                            18  
+00008004  C7DD                      19      MULS.W (A5)+, D3
+00008006                            20  
+00008006                            21  
+00008006                            22  
+00008006  C7E1                      23      MULS.W -(A1), D3
+00008008                            24  
+00008008                            25  
+00008008                            26  
+00008008  C7F8 15D6                 27      MULS.W $15D6, D3
+0000800C                            28  
+0000800C                            29  
+0000800C                            30  
+0000800C  C7F9 00946144             31      MULS.W $00946144, D3
+00008012                            32  
+00008012                            33  
+00008012                            34  
+00008012  C7FC 0099                 35      MULS.W #$99, D3
+00008016                            36  
+00008016                            37  
+00008016                            38  
+00008016  C7FC E1AD                 39      MULS.W #$E1AD, D3
+0000801A                            40  
+0000801A                            41  
+0000801A                            42  
+0000801A                            43  
+0000801A                            44  
+0000801A  FFFF FFFF                 45      SIMHALT             ; halt simulator
+0000801E                            46  
+0000801E                            47  * Put variables and constants here
+0000801E                            48  
+0000801E                            49      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000

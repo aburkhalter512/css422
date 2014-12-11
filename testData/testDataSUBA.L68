@@ -1,0 +1,78 @@
+00008000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 12/10/2014 7:52:54 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00008000                             7      ORG    $8000
+00008000                             8  START:                  ; first instruction of program
+00008000                             9  
+00008000                            10  * Put program code here
+00008000  9CC3                      11      SUBA.W D3, A6
+00008002  9DC3                      12      SUBA.L D3, A6
+00008004                            13  
+00008004                            14  
+00008004                            15  
+00008004  9CCE                      16      SUBA.W A6, A6
+00008006  9DCE                      17      SUBA.L A6, A6
+00008008                            18  
+00008008                            19  
+00008008                            20  
+00008008  9CD7                      21      SUBA.W (A7), A6
+0000800A  9DD7                      22      SUBA.L (A7), A6
+0000800C                            23  
+0000800C                            24  
+0000800C                            25  
+0000800C  9CDD                      26      SUBA.W (A5)+, A6
+0000800E  9DDD                      27      SUBA.L (A5)+, A6
+00008010                            28  
+00008010                            29  
+00008010                            30  
+00008010  9CE1                      31      SUBA.W -(A1), A6
+00008012  9DE1                      32      SUBA.L -(A1), A6
+00008014                            33  
+00008014                            34  
+00008014                            35  
+00008014  9CF9 0000879D             36      SUBA.W $879D, A6
+0000801A  9DF9 0000879D             37      SUBA.L $879D, A6
+00008020                            38  
+00008020                            39  
+00008020                            40  
+00008020  9CF9 00F8D97C             41      SUBA.W $00F8D97C, A6
+00008026  9DF9 00F8D97C             42      SUBA.L $00F8D97C, A6
+0000802C                            43  
+0000802C                            44  
+0000802C                            45  
+0000802C  9CFC 00D5                 46      SUBA.W #$D5, A6
+00008030  9DFC 000000D5             47      SUBA.L #$D5, A6
+00008036                            48  
+00008036                            49  
+00008036                            50  
+00008036  9CFC 8D2A                 51      SUBA.W #$8D2A, A6
+0000803A  9DFC 00008D2A             52      SUBA.L #$8D2A, A6
+00008040                            53  
+00008040                            54  
+00008040                            55  
+00008040  9DFC 85D4569E             56      SUBA.L #$85D4569E, A6
+00008046                            57  
+00008046                            58  
+00008046                            59  
+00008046                            60      
+00008046  FFFF FFFF                 61      SIMHALT             ; halt simulator
+0000804A                            62  
+0000804A                            63  * Put variables and constants here
+0000804A                            64  
+0000804A                            65      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               8000
