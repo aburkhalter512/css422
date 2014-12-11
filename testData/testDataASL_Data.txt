@@ -1,0 +1,18 @@
+ASL.B #$91, D3
+ASL.W #$91, D3
+ASL.L #$91, D3
+
+
+
+ASL.B #$578E, D3
+ASL.W #$578E, D3
+ASL.L #$578E, D3
+
+
+
+ASL.B #$69FD4C38, D3
+ASL.W #$69FD4C38, D3
+ASL.L #$69FD4C38, D3
+
+
+

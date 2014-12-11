@@ -1,0 +1,20 @@
+LSR.W (A7)
+
+
+
+LSR.W (A5)+
+
+
+
+LSR.W -(A1)
+
+
+
+LSR.W $0DEC
+
+
+
+LSR.W $006F9FEA
+
+
+

@@ -178,8 +178,8 @@ ERR_STACK_OVERFLOW  EQU    %10000101   ;5
 ; Only the last 3 bits matter
 EA_SUFFIX_NONE      EQU    %00000000
 EA_SUFFIX_IND       EQU    %00000001   ;(An)
-EA_SUFFIX_INC       EQU    %00000011   ;(An)+
-EA_SUFFIX_DEC       EQU    %00000010   ;-(An)
+EA_SUFFIX_INC       EQU    %00000010   ;(An)+
+EA_SUFFIX_DEC       EQU    %00000011   ;-(An)
 EA_SUFFIX_W         EQU    %00000100   ;(xxx).W
 EA_SUFFIX_L         EQU    %00000101   ;(xxx).L
 EA_SUFFIX_DATA      EQU    %00000111   ;#<data>
@@ -324,18 +324,18 @@ ITE		EQU		$FDFFFF
 *		MOVE.W  #INVALID_INSTR,(A6)
         *MOVE.L  #BTST_INSTR, (A6)
 
-        MOVE.W #$1AC3, (A6)
+        *MOVE.W #$1AC3, (A6)
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
-        MOVEA.L #START_ADDRESS, A2
-        MOVEA.L A2, A3
+        *MOVEA.L #START_ADDRESS, A2
+        *MOVEA.L A2, A3
                                         
 		* Adding this in to test PROCESS_OC.
 		* Please comment it out to test I/O.
 		* DO NOT remove.
-		JSR		PROCESS_OC
-		MOVE.B  #9, D0
-		TRAP    #15
+		*JSR		PROCESS_OC
+		*MOVE.B  #9, D0
+		*TRAP    #15
 *==============================
 *----------I/O MODULE----------
 *==============================
@@ -1566,7 +1566,7 @@ PROCESS_OC          JSR     CLR_DATA_REGISTERS
                     JSR     CHECK_ADD_OC
                     JSR     CHECK_ADDQ_OC
                     JSR     CHECK_Bcc_OC
-                    JSR     CHECK_BTST_OC
+                    *JSR     CHECK_BTST_OC
                     JSR     CHECK_MULS_OC
                     JSR     CHECK_AND_OC
                     JSR     CHECK_CMP_EOR_OC
@@ -4214,6 +4214,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 

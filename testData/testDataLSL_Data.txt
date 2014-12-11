@@ -1,0 +1,18 @@
+LSL.B #$EB, D3
+LSL.W #$EB, D3
+LSL.L #$EB, D3
+
+
+
+LSL.B #$47D8, D3
+LSL.W #$47D8, D3
+LSL.L #$47D8, D3
+
+
+
+LSL.B #$792B4A4C, D3
+LSL.W #$792B4A4C, D3
+LSL.L #$792B4A4C, D3
+
+
+

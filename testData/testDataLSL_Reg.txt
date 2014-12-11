@@ -1,0 +1,6 @@
+LSL.B D3, D3
+LSL.W D3, D3
+LSL.L D3, D3
+
+
+
