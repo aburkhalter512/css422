@@ -1847,12 +1847,12 @@ PROCESS_ADDQ_OC     MOVE.L  (SP)+, D0
                     
                     SUBI.B  #1, D0                  ; Return size - 1 is the amount of source data on the stack.
                     
-                    JSR     OC_XDFS
+                    *JSR     OC_XDFS
                     
                     MOVE.L  D7, D2                  ; Put the source data in the appropriate register.
                     MOVE.W  (SP)+, D7               ; Get the true instruction from the stack.
                     
-                    *JSR     OC_XDFS                 ; Get the fake data from the stack.
+                    JSR     OC_XDFS                 ; Get the fake data from the stack.
                     
                     MOVE.L  (SP)+, A2               ; Restore the original instruction address.
                     MOVE.B  (SP)+, D4               ; Get the opcode size from the stack.
