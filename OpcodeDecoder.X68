@@ -324,8 +324,10 @@ ITE		EQU		$FDFFFF
 *		MOVE.L  #SUBI_INSTR_2,(A6)+
 *		MOVE.L  #SUBI_INSTR_3,(A6)+	
 *		MOVE.W  #INVALID_INSTR,(A6)
-*       MOVE.L  #BTST_INSTR_STA_1, (A6)+
-*       MOVE.L  #BTST_INSTR_STA_2, (A6)
+       *MOVE.L  #BTST_INSTR_STA_1, (A6)+
+       *MOVE.L  #BTST_INSTR_STA_2, (A6)
+       
+       *MOVE.L   #$0803007A, (A6)
 
 		* DON'T REMOVE THESE 2 LINES!
 		* THESE TWO LINES ARE NEEDED UNTIL WE HAVE PROPER INSTRUCTION INPUT!
@@ -2101,7 +2103,7 @@ PROCESS_BTST_STA_OC MOVE.L  (SP)+, D0
                     MOVE.B  (SP)+, D1               ; Get the source eaType from the stack.
                     
                     SUBI.B  #1, D0                  ; Return size - 1 is the amount of source data on the stack.
-                    MOVE.B  D0, D7
+                    MOVE.B  D0, D6
                     
                     JSR     OC_XDFS
                     
@@ -2115,7 +2117,7 @@ PROCESS_BTST_STA_OC MOVE.L  (SP)+, D0
                     MOVE.B  (SP)+, D1               ; Get the destination eaType from the stack.
                     
                     SUBI.B  #1, D0                  ; Return size - 1 is the amount of destination data on the stack.
-                    ADD.B   D0, D7
+                    ADD.B   D0, D6
                     
                     JSR     OC_XDFS
                     
@@ -2139,15 +2141,10 @@ PROCESS_BTST_STA_OC MOVE.L  (SP)+, D0
                     MOVE.B  D0, -(SP)               ; Put the source return size back on the stack.
                     
                     MOVE.B  #BTST_OC_CODE, D5       ; Prepare the opcode code.
+                    MOVE.B  D6, D7                  ; Prepare the word count.
                     MOVE.B  #2, D6                  ; Prepare the EA count.
                     
                     BRA     OC_CREATE_RETVAL
-                    
-*                    MOVE.B  #TBL_MASK_DATA, D3
-*                    MOVE.B  #TBL_MASK_BTST_STA, D4
-*                    MOVE.B  #BTST_OC_CODE, D5
-*                    
-*                    BRA     OC_TWO_EA
                     
 PROCESS_BTST_DYN_OC MOVE.L  (SP)+, D0
                     CLR.L   D0
@@ -4332,6 +4329,7 @@ TEST_MOVE_8         DC.W    %0011001111111100, $E7E7, $8181, $8181  ;MOVE.W #$E7
 TEST_MOVE_9         DC.W    %0010100111111100, $12FF, $12FF, $9090, $9090 ;MOVE.L #$12FF12FF, #$90909090
 
                     END		START
+
 
 
 
